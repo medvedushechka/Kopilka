@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Поддержка — Kopilka{% endblock %}
+{% block content %}
+<section class="section compact">
+  <div class="section-head"><div><span class="eyebrow">Support</span><h1>Центр поддержки</h1><p class="muted">Создайте обращение по заявке, платежу, МСИ TEST, договору или работе личного кабинета.</p></div></div>
+  <div class="two-col-layout">
+    <form method="post" class="glass-card form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Новое обращение</h2>
+      <label>Тема<input name="subject" required placeholder="Например: не вижу статус финансирования"></label>
+      <label>Категория<select name="category"><option value="general">Общий вопрос</option><option value="loan">Заявка/займ</option><option value="payment">Платёж</option><option value="kyc">МСИ/KYC</option><option value="legal">Документы</option></select></label>
+      <label>Приоритет<select name="priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></label>
+      <label>Сообщение<textarea name="message" rows="5" required></textarea></label>
+      <button class="btn">Создать обращение</button>
+    </form>
+    <div class="glass-card">
+      <h2>Мои обращения</h2>
+      <div class="ticket-list">
+        {% for t in tickets %}
+          <a class="ticket-row" href="{{ url_for('loans.support_ticket', ticket_id=t.id) }}"><span>#{{ t.id }} · {{ t.subject }}</span><b>{{ t.status }}</b></a>
+        {% else %}<p class="muted">Обращений пока нет.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

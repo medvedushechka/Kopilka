@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Админка — Kopilka{% endblock %}
+{% block content %}
+
+<section class="page admin-page">
+  <div class="topline admin-hero">
+    <div><div class="eyebrow">Операционный центр</div><h1>Состояние платформы</h1><p class="muted">Заявки, займы, комиссии, транзакции и контрольные очереди.</p></div>
+    <div class="actions admin-primary-actions">
+      <a class="btn" href="{{ url_for('admin.bi_dashboard') }}">BI владельца</a>
+      <form method="post" action="{{ url_for('admin.overdue_check') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-soft">Проверить просрочки</button></form>
+      <form method="post" action="{{ url_for('admin.seed_demo') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost">Пересоздать DEMO</button></form>
+    </div>
+  </div>
+  <div class="stat-grid wide admin-stats">
+    <div>Заёмщики<b>{{ stats.clients }}</b></div>
+    <div>Займодавцы<b>{{ stats.investors }}</b></div>
+    <div>На витрине<b>{{ stats.marketplace }}</b></div>
+    <div>Заявки<b>{{ stats.applications }}</b></div>
+    <div>На проверке<b>{{ stats.pending }}</b></div>
+    <div>Одобрено<b>{{ stats.approved }}</b></div>
+    <div>Активные<b>{{ stats.active_loans }}</b></div>
+    <div>Инвестиций<b>{{ stats.investments }}</b></div>
+    <div>Доход<b>{{ stats.platform_income }} BYN</b></div>
+    <div>Ledger<b>{{ stats.ledger_entries }}</b></div>
+    <div>Шлюз в обработке<b>{{ stats.gateway_processing }}</b></div>
+    <div>Просрочки<b>{{ stats.overdue_loans }}</b></div><div>Документы<b>{{ stats.legal_documents }}</b></div><div>Ждут подписи<b>{{ stats.legal_waiting }}</b></div><div>Compliance<b>{{ stats.compliance_pending }}</b></div><div>Высокий риск<b>{{ stats.compliance_high }}</b></div><div>Взыскание open<b>{{ stats.collections_open }}</b></div><div>У партнёра<b>{{ stats.collections_partner }}</b></div>
+  </div>
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Последние заявки</h2><span class="pill">очередь</span></div>
+      {% for a in applications %}
+        <a class="row link" href="{{ url_for('admin.application_detail', app_id=a.id) }}">
+          <b>#{{ a.id }} {{ a.user.full_name }}</b>
+          <span>{{ a.amount }} BYN / {{ a.term_days }} дней</span>
+          <em>{{ a.status }}{% if a.scoring_score is not none %} · {{ a.scoring_score }}/1000 · {{ a.risk_level or '—' }}{% endif %}</em>
+        </a>
+      {% else %}<p>Заявок пока нет.</p>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-head"><h2>Активные и просроченные</h2><span class="pill">риск</span></div>
+      {% for loan in active_loans %}
+        <div class="row">
+          <b>#{{ loan.id }} {{ loan.user.full_name }}</b>
+          <span>Остаток: {{ loan.balance }} BYN</span>
+          <em>{{ loan.status }} · до {{ loan.due_date }}{% if loan.overdue_days > 0 %} · просрочка {{ loan.overdue_days }} дн.{% endif %}</em>
+        </div>
+      {% else %}<p>Активных займов пока нет.</p>{% endfor %}
+    </div>
+  </div>
+  <div class="panel reveal">
+    <div class="section-head"><h2>TEST банковские транзакции</h2><span class="pill">платежи</span></div>
+    {% for t in transactions %}
+      <div class="row tx-row" data-status="{{ t.status }}">
+        <b>{{ t.operation_type }}</b>
+        <span>{{ t.amount }} BYN · {{ t.external_id or 'без внешнего ID' }} · {{ t.comment or '' }}</span>
+        <em>{{ t.status }}</em>
+        {% if t.status == 'В обработке' %}
+          <form method="post" action="{{ url_for('admin.transaction_success', tx_id=t.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Отметить успешно</button></form>
+        {% endif %}
+      </div>
+    {% else %}<p>Транзакций пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

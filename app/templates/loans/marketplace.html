@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Биржа заявок — Kopilka{% endblock %}
+{% block content %}
+<section class="page-hero compact marketplace-hero">
+  <div>
+    <div class="eyebrow">Marketplace Pro</div>
+    <h1>Биржа заявок заёмщиков</h1>
+    <p class="muted">Минималистичная витрина инвестиционных заявок: рейтинг, срок, доходность, прогресс сбора и количество займодавцев.</p>
+  </div>
+  <a class="btn btn-soft" href="{{ url_for('loans.dashboard') }}">К кабинету</a>
+</section>
+
+<section class="panel filters-panel pro-filters">
+  <form method="get" class="market-filters">
+    <label>Сумма от<input name="amount_min" type="number" min="0" step="50" value="{{ filters.get('amount_min','') }}"></label>
+    <label>Сумма до<input name="amount_max" type="number" min="0" step="50" value="{{ filters.get('amount_max','') }}"></label>
+    <label>Рейтинг от
+      <select name="grade"><option value="">любой</option>{% for g in ['A+','A','B+','B','C','D'] %}<option value="{{ g }}" {% if filters.get('grade')==g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select>
+    </label>
+    <label>Риск
+      <select name="risk"><option value="">любой</option>{% for r in ['Низкий','Средний','Высокий'] %}<option value="{{ r }}" {% if filters.get('risk')==r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+    </label>
+    <label>Срок до<input name="term_max" type="number" min="3" max="60" value="{{ filters.get('term_max','') }}"></label>
+    <label>Собрано до %<input name="funded_max" type="number" min="0" max="100" value="{{ filters.get('funded_max','') }}"></label>
+    <label>Сортировка
+      <select name="sort">
+        <option value="new" {% if filters.get('sort','new')=='new' %}selected{% endif %}>новые</option>
+        <option value="yield" {% if filters.get('sort')=='yield' %}selected{% endif %}>по доходности</option>
+        <option value="risk" {% if filters.get('sort')=='risk' %}selected{% endif %}>по риску</option>
+        <option value="remaining" {% if filters.get('sort')=='remaining' %}selected{% endif %}>меньше осталось</option>
+      </select>
+    </label>
+    <div class="actions"><button class="btn btn-small">Показать</button><a class="btn btn-small btn-ghost" href="{{ url_for('loans.marketplace') }}">Сбросить</a></div>
+  </form>
+</section>
+
+<section class="market-topline reveal">
+  <div><span>Доступно заявок</span><b>{{ applications|length }}</b></div>
+  <div><span>Модель</span><b>P2P</b></div>
+  <div><span>Данные</span><b>MSI TEST</b></div>
+</section>
+
+<section class="cards-grid marketplace pro-marketplace">
+{% for app in applications %}
+  <article class="loan-card pro-loan big reveal">
+    <div class="loan-top"><b>Заявка #{{ app.id }}</b><span class="rating-badge grade-{{ app.rating_grade|replace('+','plus') }}">{{ app.rating_grade }}</span></div>
+    <div class="amount-line">{{ app.amount }} BYN</div>
+    <div class="market-meta">
+      <span>{{ app.term_days }} дней</span>
+      <span>{{ app.annual_yield }}% годовых</span>
+      <span>{{ app.risk_level }} риск</span>
+      <span>{{ app.scoring_score }}/1000</span>
+    </div>
+    <p class="muted purpose-line">{{ app.purpose or 'Цель займа не указана' }}</p>
+    <div class="progress pro-progress"><i style="width: {{ app.funding_progress }}%"></i></div>
+    <div class="funding-row"><b>{{ app.funding_progress }}%</b><span>Собрано {{ app.funded_amount }} BYN</span><span>Осталось {{ app.remaining_to_fund }} BYN</span><span>{{ app.investor_count }} инвесторов</span></div>
+    <div class="borrower-safe-meta">
+      <span>личность: MSI TEST</span><span>карта: tokenized</span><span>персональные данные скрыты</span>
+    </div>
+    {% if current_user.is_authenticated and current_user.is_investor %}
+    <form method="post" action="{{ url_for('loans.invest', app_id=app.id) }}" class="inline-form simple invest-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="amount" type="number" min="10" max="{{ app.remaining_to_fund }}" step="0.01" value="{{ [100, app.remaining_to_fund]|min }}">
+      <button class="btn">Инвестировать</button>
+    </form>
+    {% else %}<a class="btn btn-soft full" href="{{ url_for('auth.register') }}">Стать займодавцем</a>{% endif %}
+  </article>
+{% else %}<p class="muted">По выбранным фильтрам заявок нет.</p>{% endfor %}
+</section>
+{% endblock %}

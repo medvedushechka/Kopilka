@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Форма устарела — Kopilka{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <h1>Форма устарела</h1>
+  <p>Защитный токен формы отсутствует или истёк. Обновите страницу и повторите действие.</p>
+  <a class="btn full" href="{{ request.referrer or url_for('main.index') }}">Вернуться</a>
+</section>
+{% endblock %}

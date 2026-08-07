@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Документ #{{ doc.id }} — Kopilka{% endblock %}
+{% block content %}
+<section class="page-shell legal-document-page">
+  <div class="section-head">
+    <p class="eyebrow">Legal snapshot</p>
+    <h1>{{ doc.title }}</h1>
+    <p>Документ хранится как версия/snapshot. В реальном проекте здесь должен быть официальный PDF/ЭЦП-контур, связанный с МСИ, банком, SMS-провайдером или НЦЭУ.</p>
+  </div>
+
+  <div class="grid two">
+    <div class="card soft">
+      <h2>Статус</h2>
+      <div class="mini-list">
+        <div class="mini-row">Документ <span>#{{ doc.id }}</span></div>
+        <div class="mini-row">Тип <span>{{ doc.document_type }}</span></div>
+        <div class="mini-row">Версия <span>{{ doc.version }}</span></div>
+        <div class="mini-row">Статус <span>{{ doc.status }}</span></div>
+        <div class="mini-row">External ref <span>{{ doc.external_signature_ref or '—' }}</span></div>
+      </div>
+      {% if not doc.is_signed %}
+        <form method="post" action="{{ url_for('loans.sign_document', doc_id=doc.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn">Подписать через TEST-контур</button>
+        </form>
+      {% else %}
+        <p class="flash success">Документ подписан всеми требуемыми сторонами.</p>
+      {% endif %}
+    </div>
+    <div class="card soft">
+      <h2>Audit подписей</h2>
+      <div class="mini-list">
+        <div class="mini-row">Заёмщик <span>{{ doc.signed_by_borrower_at.strftime('%d.%m.%Y %H:%M') if doc.signed_by_borrower_at else 'ожидается' }}</span></div>
+        <div class="mini-row">Займодавец <span>{{ doc.signed_by_investor_at.strftime('%d.%m.%Y %H:%M') if doc.signed_by_investor_at else ('не требуется' if not doc.investor_id else 'ожидается') }}</span></div>
+        <div class="mini-row">Платформа <span>{{ doc.signed_by_platform_at.strftime('%d.%m.%Y %H:%M') if doc.signed_by_platform_at else 'ожидается' }}</span></div>
+      </div>
+      {% for event in doc.signature_events %}
+        <div class="row"><b>{{ event.signer_role }}</b><span>{{ event.provider }} · {{ event.external_ref }}</span><em>{{ event.created_at.strftime('%d.%m.%Y %H:%M') }}</em></div>
+      {% else %}<p class="muted">Подписей пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <article class="card soft legal-snapshot">
+    {{ doc.html_snapshot|safe }}
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Обращение #{{ ticket.id }} — Kopilka{% endblock %}
+{% block content %}
+<section class="section compact">
+  <div class="section-head"><div><span class="eyebrow">Support</span><h1>Обращение #{{ ticket.id }}</h1><p class="muted">{{ ticket.subject }} · {{ ticket.status }}</p></div><a class="btn btn-soft" href="{{ url_for('loans.support_center') }}">Назад</a></div>
+  <div class="glass-card">
+    <div class="message-list">
+      {% for m in ticket.messages if not m.is_internal %}
+      <div class="message-item"><strong>{{ m.author.full_name }}</strong> <span class="muted">{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}</span><p>{{ m.message }}</p></div>
+      {% endfor %}
+    </div>
+    <form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Сообщение<textarea name="message" rows="5" required></textarea></label>
+      <button class="btn">Отправить</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

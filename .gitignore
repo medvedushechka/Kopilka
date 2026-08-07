@@ -1,0 +1,29 @@
+# Виртуальные окружения
+venv/
+.venv/
+.venv*/
+env/
+
+# Локальная конфигурация
+.env
+.env.*
+!.env.example
+
+# Данные приложения
+instance/
+logs/
+*.sqlite3
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Редакторы и система
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

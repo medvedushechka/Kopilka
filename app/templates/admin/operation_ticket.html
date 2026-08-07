@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Тикет #{{ ticket.id }} — Operations{% endblock %}
+{% block content %}
+<section class="section compact">
+  <div class="section-head">
+    <div><span class="eyebrow">Operations Core</span><h1>Тикет #{{ ticket.id }}</h1><p class="muted">{{ ticket.subject }}</p></div>
+    <a class="btn btn-soft" href="{{ url_for('admin.operations_dashboard') }}">Назад</a>
+  </div>
+  <div class="cards-grid cards-grid-3">
+    <div class="kpi-card"><span>Пользователь</span><strong class="small-strong">{{ ticket.user.email }}</strong></div>
+    <div class="kpi-card"><span>Статус</span><strong>{{ ticket.status }}</strong></div>
+    <div class="kpi-card"><span>SLA</span><strong class="small-strong">{% if ticket.sla_due_at %}{{ ticket.sla_due_at.strftime('%d.%m %H:%M') }}{% else %}—{% endif %}</strong></div>
+  </div>
+</section>
+
+<section class="section compact two-col-layout">
+  <div class="glass-card">
+    <h2>Диалог</h2>
+    <div class="message-list">
+      {% for m in ticket.messages %}
+      <div class="message-item {% if m.is_internal %}internal{% endif %}">
+        <strong>{{ m.author.full_name }}</strong> <span class="muted">{{ m.created_at.strftime('%d.%m.%Y %H:%M') }}{% if m.is_internal %} · внутренняя заметка{% endif %}</span>
+        <p>{{ m.message }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="reply">
+      <label>Ответ клиенту<textarea name="message" rows="5" required></textarea></label>
+      <label>Новый статус<select name="status"><option>В работе</option><option>Ожидает клиента</option><option>Закрыта</option></select></label>
+      <button class="btn">Отправить ответ</button>
+    </form>
+  </div>
+  <aside class="glass-card">
+    <h2>Управление</h2>
+    <form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="status">
+      <label>Статус<select name="status"><option {% if ticket.status=='Новая' %}selected{% endif %}>Новая</option><option {% if ticket.status=='В работе' %}selected{% endif %}>В работе</option><option {% if ticket.status=='Ожидает клиента' %}selected{% endif %}>Ожидает клиента</option><option {% if ticket.status=='Закрыта' %}selected{% endif %}>Закрыта</option></select></label>
+      <label>Приоритет<select name="priority"><option value="low">Низкий</option><option value="medium">Средний</option><option value="high">Высокий</option><option value="critical">Критический</option></select></label>
+      <button class="btn btn-soft">Сохранить</button>
+    </form>
+    <hr>
+    <form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="internal_note">
+      <label>Внутренняя заметка<textarea name="note" rows="4" required></textarea></label>
+      <button class="btn btn-soft">Добавить заметку</button>
+    </form>
+    <hr>
+    <h3>Шаблоны</h3>
+    {% for tpl in templates %}<details><summary>{{ tpl.title }}</summary><p class="muted">{{ tpl.body }}</p></details>{% endfor %}
+  </aside>
+</section>
+{% endblock %}

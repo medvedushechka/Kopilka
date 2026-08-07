@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Collections Core — Kopilka{% endblock %}
+{% block content %}
+<section class="section compact">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Collections Core</span>
+      <h1>Работа с просрочками</h1>
+      <p class="muted">TEST-контур взыскания: напоминания, предупреждения, претензии и передача партнёру без реальных внешних действий.</p>
+    </div>
+    <form method="post" action="{{ url_for('admin.collections_run_cycle') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn">Запустить TEST-цикл</button>
+    </form>
+  </div>
+</section>
+
+<section class="page admin-page">
+  <div class="stat-grid wide admin-stats">
+    <div>Всего дел<b>{{ summary.cases_total }}</b></div>
+    <div>Открыто<b>{{ summary.open_cases }}</b></div>
+    <div>Напоминания<b>{{ summary.reminder }}</b></div>
+    <div>Предупреждения<b>{{ summary.warning }}</b></div>
+    <div>Претензии<b>{{ summary.claim }}</b></div>
+    <div>Партнёр TEST<b>{{ summary.partner_transfer }}</b></div>
+    <div>Остаток к взысканию<b>{{ summary.outstanding }} BYN</b></div>
+    <div>Действий<b>{{ summary.actions }}</b></div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Collection queue</h2><span class="pill">overdue lifecycle</span></div>
+    {% for c in cases %}
+      <div class="row">
+        <b>#{{ c.id }} · займ #{{ c.loan_id }} · {{ c.borrower.full_name }}</b>
+        <span>{{ c.stage_label }} · просрочка {{ c.overdue_days }} дн. · остаток {{ c.outstanding_amount }} BYN</span>
+        <em>{{ c.status }} · next action: {{ c.next_action_at.strftime('%d.%m.%Y %H:%M') if c.next_action_at else '—' }}{% if c.external_partner_ref %} · {{ c.external_partner_ref }}{% endif %}</em>
+        <form class="inline-form" method="post" action="{{ url_for('admin.collections_add_action', case_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="title" placeholder="Действие" value="Контакт с клиентом TEST">
+          <input name="channel" placeholder="Канал" value="operator TEST">
+          <input name="message" placeholder="Комментарий оператора">
+          <button class="btn small btn-soft">Добавить</button>
+        </form>
+        {% if c.status != 'Закрыта' %}
+          <form method="post" action="{{ url_for('admin.collections_close', case_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Закрыть</button></form>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="muted">Открытых collection-дел пока нет. Нажми “Запустить TEST-цикл” после появления просроченных займов.</p>
+    {% endfor %}
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Audit trail действий</h2><span class="pill">communications / legal / partner TEST</span></div>
+    {% for a in actions %}
+      <div class="row">
+        <b>{{ a.title }}</b>
+        <span>Дело #{{ a.case_id }} · {{ a.channel }} · {{ a.status }}</span>
+        <em>{{ a.created_at.strftime('%d.%m.%Y %H:%M') }} · {{ a.external_ref }}</em>
+        {% if a.message %}<small class="muted">{{ a.message }}</small>{% endif %}
+      </div>
+    {% else %}<p class="muted">Действий пока нет.</p>{% endfor %}
+  </div>
+
+  <div class="panel muted-box">
+    <h3>Как должно быть в реальном проекте</h3>
+    <p class="muted">Этот модуль не выполняет реального взыскания. В production напоминания идут через подключённые SMS/email/push-провайдеры, претензии формируются из юридического контура, а передача партнёру возможна только по договору, регламенту, требованиям законодательства и через защищённый API/реестр событий.</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-card wide">
+  <div class="eyebrow">Регистрация в P2P-сервисе</div>
+  <h1>Выберите роль в Kopilka</h1>
+  <p class="muted">Заёмщик создаёт заявку на займ. Займодавец пополняет TEST-кошелёк и финансирует заявки на витрине.</p>
+  <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Роль
+      <select name="role" required>
+        <option value="client">Я заёмщик — хочу взять займ</option>
+        <option value="investor">Я займодавец — хочу инвестировать</option>
+      </select>
+    </label>
+    <label>ФИО<input name="full_name" placeholder="Иванов Иван Иванович" required></label>
+    <label>Email<input name="email" type="email" placeholder="email@example.com" required></label>
+    <label>Телефон<input name="phone" placeholder="+375 ..."></label>
+    <label class="span-2">Пароль<input name="password" type="password" minlength="8" placeholder="Пароль от 8 символов" required></label>
+    <button class="btn full span-2">Создать аккаунт</button>
+  </form>
+</section>
+{% endblock %}

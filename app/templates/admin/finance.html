@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Finance Core — Kopilka{% endblock %}
+{% block content %}
+<section class="page admin-page finance-page">
+  <div class="topline admin-hero">
+    <div>
+      <div class="eyebrow">Finance Core 1.0</div>
+      <h1>Финансовое ядро</h1>
+      <p class="muted">Ledger, комиссии платформы, TEST-шлюз, движения кошельков и сверка. Это demo-слой: в реальном проекте деньги проводятся через банк-партнёр/платёжного провайдера, а Kopilka хранит статусы, ссылки и бухгалтерские проводки.</p>
+    </div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('admin.rebuild_ledger') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn">Пересобрать ledger</button>
+      </form>
+      <a class="btn btn-soft" href="{{ url_for('admin.dashboard') }}">В админку</a>
+    </div>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Доход платформы<b>{{ summary.platform_income }} BYN</b></div>
+    <div>Активные инвестиции<b>{{ summary.active_investments }} BYN</b></div>
+    <div>Ожидаемые возвраты<b>{{ summary.total_expected_return }} BYN</b></div>
+    <div>Активное тело займов<b>{{ summary.loan_principal }} BYN</b></div>
+    <div>Погашено заёмщиками<b>{{ summary.borrower_paid }} BYN</b></div>
+    <div>Баланс кошельков<b>{{ summary.total_wallet_balances }} BYN</b></div>
+    <div>Успешно через шлюз<b>{{ summary.gateway_success }} BYN</b></div>
+    <div>В обработке шлюза<b>{{ summary.gateway_processing }}</b></div>
+    <div>Ledger posted<b>{{ summary.ledger_posted }} BYN</b></div>
+    <div>Предупреждения сверки<b>{{ reconciliation.warnings }}</b></div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Как это должно работать в реале</h2><span class="pill">architecture</span></div>
+      <div class="flow-list">
+        <div class="row"><b>1. Пополнение инвестора</b><span>Банк/платёжный провайдер → TEST-кошелёк → ledger-запись.</span></div>
+        <div class="row"><b>2. Инвестиция</b><span>Кошелёк займодавца → escrow инвестиций + комиссия Kopilka.</span></div>
+        <div class="row"><b>3. Полное финансирование</b><span>Escrow → выплата заёмщику через банк-партнёр.</span></div>
+        <div class="row"><b>4. Погашение</b><span>Заёмщик → платёжный шлюз → распределение между займодавцами.</span></div>
+        <div class="row"><b>5. Сверка</b><span>Gateway operations + wallet transactions + ledger entries должны сходиться.</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-head"><h2>Сверка кошельков</h2><span class="pill">reconciliation</span></div>
+      {% for row in reconciliation.rows[:10] %}
+        <div class="row">
+          <b>{{ row.user.full_name if row.user else 'wallet' }}</b>
+          <span>Баланс: {{ row.balance }} BYN · Доступно: {{ row.available }} BYN · Заработано: {{ row.earned }} BYN</span>
+          <em>{{ row.status }}</em>
+        </div>
+      {% else %}<p>Кошельков пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Ledger-журнал</h2><span class="pill">double-entry demo</span></div>
+    {% for e in ledger_entries %}
+      <div class="row ledger-row">
+        <b>{{ e.operation_type }} · {{ e.amount }} {{ e.currency }}</b>
+        <span>{{ e.debit_account }} → {{ e.credit_account }}</span>
+        <em>{{ e.status }} · {{ e.external_id or e.idempotency_key }} · {{ e.created_at.strftime('%d.%m %H:%M') }}</em>
+      </div>
+    {% else %}<p>Ledger пуст. Нажми «Пересобрать ledger» или пересоздай demo-базу.</p>{% endfor %}
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>TEST-платёжный шлюз</h2><span class="pill">bank/payment provider</span></div>
+      {% for op in gateway_ops %}
+        <div class="row tx-row" data-status="{{ op.status }}">
+          <b>{{ op.operation_type }} · {{ op.amount }} {{ op.currency }}</b>
+          <span>{{ op.provider }} · {{ op.external_id }}</span>
+          <em>{{ op.status }}{% if op.processed_at %} · {{ op.processed_at.strftime('%d.%m %H:%M') }}{% endif %}</em>
+        </div>
+      {% else %}<p>Операций шлюза пока нет.</p>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-head"><h2>Движения кошельков</h2><span class="pill">wallet transactions</span></div>
+      {% for tx in wallet_txs %}
+        <div class="row">
+          <b>{{ tx.operation_type }} · {{ tx.amount }} BYN</b>
+          <span>{{ tx.direction }} · balance after: {{ tx.balance_after or '—' }} BYN</span>
+          <em>{{ tx.status }} · {{ tx.external_id or tx.id }}</em>
+        </div>
+      {% else %}<p>Движений кошельков пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Комиссии Kopilka</h2><span class="pill">platform revenue</span></div>
+    {% for fee in platform_fees %}
+      <div class="row">
+        <b>{{ fee.source_type }} · {{ fee.amount }} BYN</b>
+        <span>{{ fee.comment or '' }}</span>
+        <em>{{ fee.created_at.strftime('%d.%m %H:%M') }}</em>
+      </div>
+    {% else %}<p>Комиссий пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}BI владельца — Kopilka{% endblock %}
+{% block content %}
+<section class="section compact bi-hero">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">BI владельца</span>
+      <h1>Показатели платформы</h1>
+      <p class="muted">Оборот, комиссии, риск, просрочка, операционная нагрузка и качество портфеля.</p>
+    </div>
+    <div class="button-row">
+      <a class="btn btn-soft" href="{{ url_for('admin.dashboard') }}">Админка</a>
+      <a class="btn btn-soft" href="{{ url_for('admin.finance_dashboard') }}">Финансы</a>
+      <a class="btn btn-soft" href="{{ url_for('admin.collections_dashboard') }}">Взыскание</a>
+      <a class="btn btn-soft" href="{{ url_for('admin.compliance_dashboard') }}">Compliance</a>
+    </div>
+  </div>
+</section>
+
+<section class="page bi-page">
+  <div class="bi-overview panel reveal">
+    <div>
+      <span class="eyebrow">Бизнес-пульс</span>
+      <h2>{{ kpis.issued_total }} BYN</h2>
+      <p class="muted">Всего выдано займов через платформу. Активный инвестиционный портфель: <b>{{ kpis.active_investments_total }} BYN</b>.</p>
+    </div>
+    <div class="bi-pulse-grid">
+      <div><span>Доход платформы</span><b>{{ kpis.platform_income_total }} BYN</b><em>месяц: {{ kpis.month_income }} BYN</em></div>
+      <div><span>Возвращено</span><b>{{ kpis.repaid_total }} BYN</b><em>остаток: {{ kpis.outstanding_total }} BYN</em></div>
+      <div><span>Просрочка</span><b>{{ kpis.overdue_amount }} BYN</b><em>{{ kpis.overdue_loans_count }} дел</em></div>
+      <div><span>Конверсия</span><b>{{ kpis.conversion_funded }}%</b><em>заявка → финансирование</em></div>
+    </div>
+  </div>
+
+  <div class="stat-grid wide bi-kpis reveal">
+    <div>Пользователи<b>{{ kpis.users_total }}</b><span>все роли</span></div>
+    <div>Заёмщики<b>{{ kpis.заёмщики_count }}</b><span>заёмщики</span></div>
+    <div>Инвесторы<b>{{ kpis.investors_count }}</b><span>инвесторы</span></div>
+    <div>Заявки<b>{{ kpis.applications_count }}</b><span>воронка</span></div>
+    <div>Займы<b>{{ kpis.loans_count }}</b><span>выдано</span></div>
+    <div>Активные<b>{{ kpis.active_loans_count }}</b><span>в работе</span></div>
+    <div>Закрытые<b>{{ kpis.closed_loans_count }}</b><span>возвращено</span></div>
+    <div>Доля просрочки<b>{{ kpis.default_rate }}%</b><span>по займам</span></div>
+    <div>Эффективность взыскания<b>{{ kpis.collection_rate }}%</b><span>закрытые дела</span></div>
+    <div>Средний займ<b>{{ kpis.avg_loan_amount }} BYN</b><span>средний чек</span></div>
+    <div>Средний срок<b>{{ kpis.avg_term_days }} дн.</b><span>срок</span></div>
+    <div>Доходность<b>{{ kpis.avg_investor_yield }}%</b><span>ожидаемая</span></div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel chart-panel">
+      <div class="section-head compact"><h2>Оборот выдач</h2><span class="pill">BYN / месяц</span></div>
+      <canvas id="issuedChart" height="130"></canvas>
+    </div>
+    <div class="panel chart-panel">
+      <div class="section-head compact"><h2>Доход платформы</h2><span class="pill gold">комиссии</span></div>
+      <canvas id="incomeChart" height="130"></canvas>
+    </div>
+  </div>
+
+  <div class="cards three reveal">
+    <div class="panel chart-panel small-chart">
+      <div class="section-head compact"><h2>Инвестиции</h2><span class="pill">пополнения</span></div>
+      <canvas id="investmentsChart" height="150"></canvas>
+    </div>
+    <div class="panel chart-panel small-chart">
+      <div class="section-head compact"><h2>Статусы заявок</h2><span class="pill">воронка</span></div>
+      <canvas id="statusesChart" height="150"></canvas>
+    </div>
+    <div class="panel chart-panel small-chart">
+      <div class="section-head compact"><h2>Рейтинги</h2><span class="pill">риск</span></div>
+      <canvas id="ratingsChart" height="150"></canvas>
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head compact"><h2>Доходы и комиссии</h2><span class="pill">экономика</span></div>
+      <div class="bi-ledger-grid">
+        <div><span>Комиссии инвесторов</span><b>{{ kpis.investor_комиссии_total }} BYN</b></div>
+        <div><span>Комиссии заёмщиков</span><b>{{ kpis.borrower_комиссии_total }} BYN</b></div>
+        <div><span>Ожидаемая прибыль инвесторов</span><b>{{ kpis.investor_expected_profit }} BYN</b></div>
+        <div><span>Всего инвестировано</span><b>{{ kpis.investments_total }} BYN</b></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-head compact"><h2>Системное здоровье</h2><span class="pill">контроль</span></div>
+      <div class="health-grid">
+        <a href="{{ url_for('admin.finance_dashboard') }}"><span>Ошибки платежей</span><b>{{ system_health.payment_errors }}</b></a>
+        <a href="{{ url_for('admin.finance_dashboard') }}"><span>Платежи в обработке</span><b>{{ system_health.gateway_processing }}</b></a>
+        <a href="{{ url_for('admin.operations_dashboard') }}"><span>Открытые обращения</span><b>{{ system_health.support_open }}</b></a>
+        <a href="{{ url_for('admin.operations_dashboard') }}"><span>Ручная проверка</span><b>{{ system_health.manual_review }}</b></a>
+        <a href="{{ url_for('admin.compliance_dashboard') }}"><span>Compliance</span><b>{{ system_health.compliance_open }}</b></a>
+        <a href="{{ url_for('admin.antifraud_dashboard') }}"><span>Антифрод</span><b>{{ system_health.fraud_open }}</b></a>
+        <a href="{{ url_for('admin.collections_dashboard') }}"><span>Взыскание open</span><b>{{ system_health.collections_open }}</b></a>
+        <a href="{{ url_for('admin.legal_dashboard') }}"><span>Ждут подписи</span><b>{{ system_health.pending_signatures }}</b></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head compact"><h2>Топ инвесторов</h2><span class="pill">инвесторы</span></div>
+      {% for investor, total, count in top_investors %}
+        <div class="row bi-rank-row">
+          <b>{{ loop.index }}. {{ investor.full_name }}</b>
+          <span>{{ investor.email }}</span>
+          <em>{{ total }} BYN · инвестиций: {{ count }}</em>
+        </div>
+      {% else %}<p class="muted">Инвестиций пока нет.</p>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-head compact"><h2>Топ заёмщиков</h2><span class="pill">заёмщики</span></div>
+      {% for borrower, total, count in top_заёмщики %}
+        <div class="row bi-rank-row">
+          <b>{{ loop.index }}. {{ borrower.full_name }}</b>
+          <span>{{ borrower.email }}</span>
+          <em>{{ total }} BYN · займов: {{ count }}</em>
+        </div>
+      {% else %}<p class="muted">Займов пока нет.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<script>
+  window.kopilkaBICharts = {{ charts|tojson }};
+</script>
+<script>
+(function () {
+  const data = window.kopilkaBICharts || {};
+  if (!window.Chart) return;
+
+  const moneyOptions = {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, ticks: { callback: value => value + ' BYN' } }
+    }
+  };
+  const countOptions = {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, precision: 0 } }
+  };
+  function lineChart(id, source) {
+    const el = document.getElementById(id);
+    if (!el || !source) return;
+    new Chart(el, { type: 'line', data: { labels: source.labels, datasets: [{ data: source.values, tension: .38, fill: true }] }, options: moneyOptions });
+  }
+  function barChart(id, source, options) {
+    const el = document.getElementById(id);
+    if (!el || !source) return;
+    new Chart(el, { type: 'bar', data: { labels: source.labels, datasets: [{ data: source.values, borderRadius: 12 }] }, options: options || countOptions });
+  }
+  lineChart('issuedChart', data.issued_months);
+  lineChart('incomeChart', data.income_months);
+  barChart('investmentsChart', data.investments_months, moneyOptions);
+  barChart('statusesChart', data.statuses, countOptions);
+  barChart('ratingsChart', data.ratings, countOptions);
+})();
+</script>
+{% endblock %}

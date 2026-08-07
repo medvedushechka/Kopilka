@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Уведомления — Kopilka{% endblock %}
+{% block content %}
+<section class="page notifications-page">
+  <div class="topline borrower-hero">
+    <div>
+      <div class="eyebrow">Communications Core</div>
+      <h1>Центр уведомлений</h1>
+      <p class="muted">Все события платформы: заявки, инвестиции, платежи, поддержка, рейтинг и системные сообщения.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-soft" href="{{ url_for('loans.notification_settings') }}">Настройки</a>
+      <form method="post" action="{{ url_for('loans.read_notifications') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Прочитать все</button></form>
+    </div>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Всего<b>{{ counts.all }}</b></div>
+    <div>Новые<b>{{ counts.unread }}</b></div>
+    <div>Займы<b>{{ counts.loan }}</b></div>
+    <div>Инвестиции<b>{{ counts.investment }}</b></div>
+    <div>Платежи<b>{{ counts.payment }}</b></div>
+    <div>Поддержка<b>{{ counts.support }}</b></div>
+  </div>
+
+  <div class="panel pro-filters reveal">
+    <form class="filters" method="get">
+      <label>Категория
+        <select name="category">
+          <option value="">Все</option>
+          <option value="loan" {% if category == 'loan' %}selected{% endif %}>Займы</option>
+          <option value="investment" {% if category == 'investment' %}selected{% endif %}>Инвестиции</option>
+          <option value="payment" {% if category == 'payment' %}selected{% endif %}>Платежи</option>
+          <option value="support" {% if category == 'support' %}selected{% endif %}>Поддержка</option>
+          <option value="rating" {% if category == 'rating' %}selected{% endif %}>Рейтинг</option>
+          <option value="system" {% if category == 'system' %}selected{% endif %}>Система</option>
+        </select>
+      </label>
+      <label>Статус
+        <select name="status">
+          <option value="">Все</option>
+          <option value="unread" {% if status == 'unread' %}selected{% endif %}>Только новые</option>
+        </select>
+      </label>
+      <button class="btn">Показать</button>
+    </form>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Лента событий</h2><span class="pill">{{ notifications|length }}</span></div>
+    {% for n in notifications %}
+      <div class="notice notification-row {{ n.notification_type }} {% if not n.is_read %}unread{% endif %}">
+        <div class="notification-meta">
+          <span class="pill">{{ n.category_label }}</span>
+          {% if not n.is_read %}<span class="pill gold">new</span>{% endif %}
+          <small>{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+        </div>
+        <b>{{ n.title }}</b>
+        <p>{{ n.message }}</p>
+        {% if not n.is_read %}
+          <form method="post" action="{{ url_for('loans.read_notification', notification_id=n.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-ghost small">Отметить прочитанным</button>
+          </form>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty-state">Уведомлений пока нет.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page">
+  <a class="back-link" href="{{ url_for('loans.dashboard') }}">← Назад в кабинет</a>
+  <h1>Карточка займа #{{ loan.id }}</h1>
+  <div class="cards four">
+    <div class="panel"><small>Сумма займа</small><b class="metric">{{ loan.principal }} BYN</b></div>
+    <div class="panel"><small>К возврату всего</small><b class="metric">{{ loan.total_due }} BYN</b></div>
+    <div class="panel"><small>Остаток</small><b class="metric">{{ loan.balance }} BYN</b></div>
+    <div class="panel"><small>Статус</small><b class="metric">{{ loan.status }}</b></div>
+  </div>
+
+  {% if loan.overdue_days > 0 %}
+    <div class="alert-panel danger">
+      <b>Займ просрочен на {{ loan.overdue_days }} дн.</b>
+      <span>В тестовом режиме админ может запустить начисление просрочки. Пользователь может внести платёж или оформить продление.</span>
+    </div>
+  {% elif loan.days_left <= 3 and loan.status == 'Активный' %}
+    <div class="alert-panel warning">
+      <b>До даты возврата осталось {{ loan.days_left }} дн.</b>
+      <span>Можно погасить займ или тестово продлить срок.</span>
+    </div>
+  {% endif %}
+
+  <div class="cards two">
+    <div class="panel">
+      <h2>Платёж и продление</h2>
+      <p><b>Дата выдачи:</b> {{ loan.issued_at.strftime('%d.%m.%Y %H:%M') }}</p>
+      <p><b>Дата возврата:</b> {{ loan.due_date.strftime('%d.%m.%Y') }}</p>
+      <p><b>Ставка:</b> {{ (loan.daily_rate * 100)|round(2) }}% в день</p>
+      <p><b>Проценты:</b> {{ loan.base_interest }} BYN</p>
+      <p><b>Штрафы:</b> {{ loan.penalty_amount }} BYN</p>
+      <p><b>Продлений:</b> {{ loan.extension_count }}</p>
+
+      <form method="post" action="{{ url_for('loans.repay', loan_id=loan.id) }}" class="stack-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Сумма тестового платежа</label>
+        <input name="amount" type="number" step="0.01" value="{{ loan.balance }}" placeholder="Сумма платежа">
+        <button class="btn full">Тестовый платёж</button>
+      </form>
+
+      {% if loan.status in ['Активный', 'Просрочен'] %}
+      <form method="post" action="{{ url_for('loans.extend_loan', loan_id=loan.id) }}" class="stack-form subtle-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Продлить займ</label>
+        <select name="days">
+          <option value="7">7 дней</option>
+          <option value="14">14 дней</option>
+          <option value="30">30 дней</option>
+        </select>
+        <small>Тестовая комиссия за продление: {{ loan.extension_fee }} BYN.</small>
+        <button class="btn ghost full">Продлить TEST</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <h2>График начислений</h2>
+      {% for item in schedule %}
+        <div class="row">
+          <b>{{ item.date.strftime('%d.%m.%Y') }}</b>
+          <span>{{ item.amount }} BYN</span>
+          <em>расчётная сумма</em>
+        </div>
+      {% else %}<p>График пока не сформирован.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>История операций</h2>
+    {% for t in transactions %}
+      <div class="row tx-row" data-status="{{ t.status }}">
+        <b>{{ t.operation_type }}</b>
+        <span>{{ t.amount }} BYN · {{ t.comment or '' }}</span>
+        <em>{{ t.created_at.strftime('%d.%m.%Y %H:%M') }} · {{ t.status }}</em>
+      </div>
+    {% else %}<p>Операций пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

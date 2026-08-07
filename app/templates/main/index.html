@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Kopilka — P2P fintech platform{% endblock %}
+{% block content %}
+<section class="pro-hero">
+  <div class="hero-copy reveal">
+    <div class="eyebrow-pill">P2P marketplace · MSI TEST · Bank API TEST</div>
+    <h1>Финансирование от людей. Инвестиции с прозрачной аналитикой.</h1>
+    <p>Kopilka — светлая fintech-платформа, где заёмщики получают деньги от частных займодавцев, а инвесторы управляют портфелем, риском и доходностью без хранения паспортов и карт на сайте.</p>
+    <div class="hero-actions">
+      <a class="btn" href="{{ url_for('auth.register') }}">Получить займ</a>
+      <a class="btn btn-soft" href="{{ url_for('auth.register') }}">Стать займодавцем</a>
+      <a class="btn btn-ghost" href="{{ url_for('loans.marketplace') }}">Смотреть биржу</a>
+    </div>
+  </div>
+  <div class="pro-visual reveal delay-1">
+    <div class="holo-card main-holo">
+      <div class="holo-top"><span>Portfolio OS</span><b>LIVE TEST</b></div>
+      <div class="holo-value">{{ stats.total_funded }} BYN</div>
+      <canvas id="heroChart" height="130"></canvas>
+      <div class="holo-metrics">
+        <div><span>Средняя доходность</span><b>{{ stats.avg_yield }}%</b></div>
+        <div><span>Активные займы</span><b>{{ stats.active_loans }}</b></div>
+        <div><span>Комиссии</span><b>{{ stats.platform_income }} BYN</b></div>
+      </div>
+    </div>
+    <div class="floating-pill pill-1">MSI reference only</div>
+    <div class="floating-pill pill-2">Card token only</div>
+    <div class="floating-pill pill-3">No passport storage</div>
+  </div>
+</section>
+
+<section class="kpi-strip pro-kpis reveal">
+  <article><span>Профинансировано</span><strong data-counter="{{ stats.total_funded|int }}">0</strong><small>BYN на демо-рынке</small></article>
+  <article><span>Займодавцы</span><strong data-counter="{{ stats.investors }}">0</strong><small>активные счета</small></article>
+  <article><span>Заёмщики</span><strong data-counter="{{ stats.borrowers }}">0</strong><small>с подтверждением МСИ TEST</small></article>
+  <article><span>Доход платформы</span><strong data-counter="{{ stats.platform_income|int }}">0</strong><small>комиссии TEST</small></article>
+</section>
+
+<section class="pro-section how-it-works reveal">
+  <div class="section-title clean">
+    <div><div class="eyebrow">Две стороны рынка</div><h2>Платформа не выдаёт деньги сама — она соединяет заёмщиков и займодавцев.</h2></div>
+  </div>
+  <div class="scenario-grid">
+    <article class="scenario-card borrower">
+      <div class="scenario-icon">01</div>
+      <h3>Заёмщик</h3>
+      <p>Проходит МСИ TEST, создаёт заявку, получает рейтинг и ждёт финансирования от нескольких займодавцев.</p>
+      <ul><li>Сумма и срок</li><li>Скоринг и рейтинг</li><li>Сбор инвестиций</li><li>Погашение и история</li></ul>
+    </article>
+    <article class="scenario-card investor">
+      <div class="scenario-icon">02</div>
+      <h3>Займодавец</h3>
+      <p>Пополняет TEST-кошелёк, выбирает заявки, инвестирует частями и видит риск-профиль портфеля.</p>
+      <ul><li>Биржа заявок</li><li>Автоинвест</li><li>Доходность</li><li>Аналитика риска</li></ul>
+    </article>
+  </div>
+</section>
+
+<section class="market-preview reveal">
+  <div class="section-title clean">
+    <div><div class="eyebrow">Биржа</div><h2>Заявки как инвестиционные продукты</h2></div>
+    <a class="btn btn-soft btn-small" href="{{ url_for('loans.marketplace') }}">Открыть маркетплейс</a>
+  </div>
+  <div class="cards-grid marketplace preview-grid">
+    {% for app in featured_applications %}
+    <article class="loan-card pro-loan compact-card">
+      <div class="loan-top"><b>#{{ app.id }}</b><span class="rating-badge grade-{{ app.rating_grade|replace('+','plus') }}">{{ app.rating_grade }}</span></div>
+      <div class="amount-line">{{ app.amount }} BYN</div>
+      <div class="market-meta"><span>{{ app.term_days }} дней</span><span>{{ app.annual_yield }}% годовых</span><span>{{ app.risk_level }}</span></div>
+      <div class="progress pro-progress"><i style="width: {{ app.funding_progress }}%"></i></div>
+      <div class="funding-row"><b>{{ app.funding_progress }}%</b><span>{{ app.funded_amount }} / {{ app.amount }} BYN</span></div>
+    </article>
+    {% else %}
+    <div class="panel empty-state">После reset-db здесь появятся demo-заявки.</div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="security futuristic pro-security reveal">
+  <div>
+    <div class="eyebrow">Security architecture</div>
+    <h2>Чувствительные данные остаются у официальных провайдеров.</h2>
+  </div>
+  <p>В реальном запуске идентификация идёт через МСИ/официальный KYC, платежи — через банк или платёжный шлюз. Kopilka хранит только статусы, reference, токены, заявки, инвестиции, комиссии и аудит.</p>
+</section>
+{% endblock %}

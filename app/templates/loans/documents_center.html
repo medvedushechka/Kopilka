@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Legal Core — Kopilka{% endblock %}
+{% block content %}
+<section class="page-shell legal-page">
+  <div class="section-head">
+    <p class="eyebrow">Legal Core</p>
+    <h1>Документы, договоры и TEST-подписание</h1>
+    <p>Юридический контур P2P-платформы: договоры займа между заёмщиком и займодавцами, графики платежей, согласия и audit-trail подписания. Паспортные данные и сканы документов не хранятся.</p>
+  </div>
+
+  <div class="grid two">
+    <div class="card soft gold-panel">
+      <h2>Как должно быть в реальном проекте</h2>
+      <div class="mini-list">
+        <div class="mini-row">Идентификация пользователя <span>МСИ / банк / KYC</span></div>
+        <div class="mini-row">Формирование договора <span>HTML/PDF snapshot</span></div>
+        <div class="mini-row">Подписание <span>SMS / МСИ / ЭЦП / НЦЭУ</span></div>
+        <div class="mini-row">Хранение на сайте <span>статус + external ref</span></div>
+      </div>
+    </div>
+    <div class="card soft">
+      <h2>Что Kopilka не хранит</h2>
+      <p class="muted">Нет паспортных данных, сканов паспорта, ID-карты, селфи с документом и полного номера карты. В demo хранится только статус МСИ TEST, токен карты TEST и юридические snapshots документов.</p>
+    </div>
+  </div>
+
+  <div class="card soft">
+    <div class="section-head compact"><h2>Мои документы сделки</h2><span class="pill">{{ docs|length }} документов</span></div>
+    {% if docs %}
+      <div class="doc-grid">
+      {% for doc in docs %}
+        <a class="doc-card" href="{{ url_for('loans.deal_document', doc_id=doc.id) }}">
+          <span class="doc-type">{{ doc.document_type }}</span>
+          <b>{{ doc.title }}</b>
+          <em>Версия {{ doc.version }} · {{ doc.status }}</em>
+          <small>{{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+        </a>
+      {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">Документы появятся после создания активного займа или пересборки юридического пакета администратором.</p>
+    {% endif %}
+  </div>
+
+  <div class="card soft">
+    <div class="section-head compact"><h2>Активные шаблоны</h2><span class="pill">versioned docs</span></div>
+    <div class="mini-list">
+    {% for template in templates %}
+      <div class="mini-row"><b>{{ template.title }}</b><span>{{ template.document_type }} · v{{ template.version }}{% if template.requires_signature %} · подпись{% endif %}</span></div>
+    {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

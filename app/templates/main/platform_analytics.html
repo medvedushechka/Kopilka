@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Аналитика платформы — Kopilka{% endblock %}
+{% block content %}
+<section class="page-hero compact intelligence-hero">
+  <div>
+    <div class="eyebrow">Kopilka Intelligence</div>
+    <h1>Публичная аналитика P2P-платформы</h1>
+    <p class="muted">Демонстрационная витрина прозрачности: объём инвестиций, возвраты, заявки, просрочки, комиссии и распределение рейтингов без раскрытия персональных данных.</p>
+  </div>
+  <a class="btn btn-soft" href="{{ url_for('loans.marketplace') }}">Открыть биржу</a>
+</section>
+
+<section class="intelligence-kpis reveal">
+  <article class="metric-card primary"><span>Инвестировано</span><strong>{{ stats.total_invested }} BYN</strong><small>TEST-объём P2P-долей</small></article>
+  <article class="metric-card"><span>Ожидаемый возврат</span><strong>{{ stats.expected_return }} BYN</strong><small>по активным и закрытым долям</small></article>
+  <article class="metric-card"><span>Доход платформы</span><strong>{{ stats.platform_income }} BYN</strong><small>комиссии demo-рынка</small></article>
+  <article class="metric-card"><span>Успешность возврата</span><strong>{{ stats.returned_rate }}%</strong><small>расчёт по demo-истории</small></article>
+  <article class="metric-card"><span>Займодавцы</span><strong>{{ stats.investors }}</strong><small>активные demo-счета</small></article>
+  <article class="metric-card"><span>Заёмщики</span><strong>{{ stats.borrowers }}</strong><small>профили с MSI TEST</small></article>
+</section>
+
+<section class="analytics-grid platform-analytics-grid reveal">
+  <article class="panel chart-panel large">
+    <div class="section-head"><div><h2>Распределение заявок по рейтингу</h2><p class="muted">A+/A — более консервативный сегмент, C/D — повышенный риск.</p></div></div>
+    <canvas id="platformGradeChart" data-labels='{{ grade_labels|tojson }}' data-values='{{ grade_values|tojson }}' height="160"></canvas>
+  </article>
+  <article class="panel forecast-card intelligence-summary">
+    <div class="eyebrow">Risk pulse</div>
+    <h2>Состояние рынка</h2>
+    <div class="forecast-row"><span>На бирже</span><b>{{ stats.marketplace }}</b></div>
+    <div class="forecast-row"><span>Активные займы</span><b>{{ stats.active_loans }}</b></div>
+    <div class="forecast-row"><span>Просрочки</span><b>{{ stats.overdue_loans }}</b></div>
+    <p class="muted">В реальном проекте сюда добавляются фактические банковские события, KYC-статусы, дефолты и отчёты для регуляторики.</p>
+  </article>
+</section>
+
+<section class="pro-section reveal">
+  <div class="section-title clean"><div><div class="eyebrow">Прозрачность</div><h2>Что платформа показывает инвестору до вложения</h2></div></div>
+  <div class="scenario-grid intelligence-cards">
+    <article class="scenario-card"><div class="scenario-icon">R</div><h3>Рейтинг</h3><p>Оценка строится по скорингу, истории погашений, уровню просрочек и финансовой дисциплине.</p></article>
+    <article class="scenario-card"><div class="scenario-icon">K</div><h3>KYC/MSI</h3><p>Kopilka не хранит паспорт и сканы. На платформе остаётся только статус проверки и reference официального провайдера.</p></article>
+  </div>
+</section>
+{% endblock %}

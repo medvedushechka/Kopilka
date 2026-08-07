@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="auth-card"><h1>Вход</h1><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="email" type="email" placeholder="Email" required><input name="password" type="password" placeholder="Пароль" required><button class="btn full">Войти</button></form><p>Тестовый админ после init-db: admin@kopilka.test / admin12345</p></section>{% endblock %}

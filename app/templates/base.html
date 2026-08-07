@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Kopilka{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="orb orb-a" aria-hidden="true"></div>
+<div class="orb orb-b" aria-hidden="true"></div>
+<div class="ambient-grid" aria-hidden="true"></div>
+<header class="site-header">
+  <a class="brand" href="{{ url_for('main.index') }}"><span class="brand-mark">k</span>kopilka</a>
+  <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
+  <nav class="nav">
+    <a href="{{ url_for('main.index') }}">Главная</a>
+    {% if not current_user.is_authenticated or current_user.is_borrower %}<a href="{{ url_for('loans.apply') }}">Получить займ</a>{% endif %}
+    {% if not current_user.is_authenticated or not current_user.is_admin %}<a href="{{ url_for('loans.marketplace') }}">{{ 'Инвестировать' if not current_user.is_authenticated or current_user.is_investor else 'Витрина' }}</a>{% endif %}
+    <a href="{{ url_for('main.platform_analytics') }}">Статистика</a>
+    <a href="{{ url_for('main.documents') }}">Документы</a>
+
+    {% if current_user.is_authenticated %}
+      <a class="notify-link" href="{{ url_for('loans.notifications_center') }}">Уведомления{% if unread_notifications_count %}<span>{{ unread_notifications_count }}</span>{% endif %}</a>
+      <a href="{{ url_for('admin.dashboard') if current_user.is_admin else url_for('loans.dashboard') }}">Кабинет</a>
+      {% if current_user.is_admin %}
+        <div class="nav-dropdown">
+          <a class="nav-dropdown-toggle" href="{{ url_for('admin.dashboard') }}">Админка</a>
+          <div class="nav-dropdown-menu">
+            <a href="{{ url_for('admin.bi_dashboard') }}">BI владельца</a>
+            <a href="{{ url_for('admin.finance_dashboard') }}">Финансы</a>
+            <a href="{{ url_for('admin.operations_dashboard') }}">Операции</a>
+            <a href="{{ url_for('admin.communications_dashboard') }}">Коммуникации</a>
+            <a href="{{ url_for('admin.compliance_dashboard') }}">Compliance</a>
+            <a href="{{ url_for('admin.antifraud_dashboard') }}">Антифрод</a>
+            <a href="{{ url_for('admin.collections_dashboard') }}">Взыскание</a>
+            <a href="{{ url_for('admin.legal_dashboard') }}">Документы</a>
+          </div>
+        </div>
+      {% endif %}
+      <form class="logout-form" method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-small btn-soft" type="submit">Выйти</button></form>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}">Войти</a>
+      <a class="btn btn-small" href="{{ url_for('auth.register') }}">Регистрация</a>
+    {% endif %}
+  </nav>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <section class="flash-wrap">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </section>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+{% if current_user.is_authenticated %}
+<nav class="mobile-dock">
+  <a href="{{ url_for('main.index') }}">⌂<span>Главная</span></a>
+  {% if current_user.is_admin %}<a href="{{ url_for('admin.finance_dashboard') }}">◇<span>Финансы</span></a>{% else %}<a href="{{ url_for('loans.marketplace') }}">◇<span>{{ 'Инвест.' if current_user.is_investor else 'Витрина' }}</span></a>{% endif %}
+  <a href="{{ url_for('main.platform_analytics') }}">◈<span>Стат.</span></a>
+  {% if current_user.is_admin %}<a href="{{ url_for('admin.dashboard') }}">▦<span>Админка</span></a>{% elif current_user.is_investor %}<a href="{{ url_for('loans.dashboard') }}">⌁<span>Портфель</span></a>{% else %}<a href="{{ url_for('loans.apply') }}">＋<span>Заявка</span></a>{% endif %}
+  <a href="{{ url_for('loans.notifications_center') }}">🔔<span>Увед.</span></a>
+  <a href="{{ url_for('admin.dashboard') if current_user.is_admin else url_for('loans.dashboard') }}">◌<span>Кабинет</span></a>
+</nav>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

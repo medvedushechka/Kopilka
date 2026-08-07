@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Communications Core — Kopilka{% endblock %}
+{% block content %}
+<section class="page admin-page communications-page">
+  <div class="topline admin-hero">
+    <div>
+      <div class="eyebrow">Notifications & Communications Core 1.0</div>
+      <h1>Коммуникации</h1>
+      <p class="muted">Центр уведомлений, TEST email/SMS/push-каналы, шаблоны сообщений и журнал отправок. Реальные провайдеры здесь не подключены: отправки логируются локально.</p>
+    </div>
+    <form method="post" action="{{ url_for('admin.communications_test') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="email" placeholder="email пользователя или пусто">
+      <button class="btn">Отправить TEST</button>
+    </form>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Уведомления<b>{{ summary.notifications }}</b></div>
+    <div>Непрочитанные<b>{{ summary.unread }}</b></div>
+    <div>Отправки<b>{{ summary.logs_total }}</b></div>
+    <div>Email<b>{{ summary.by_channel.email }}</b></div>
+    <div>SMS<b>{{ summary.by_channel.sms }}</b></div>
+    <div>Push<b>{{ summary.by_channel.push }}</b></div>
+    <div>Ошибки<b>{{ summary.failed }}</b></div>
+    <div>Шаблоны<b>{{ summary.templates }}</b></div>
+    <div>Настройки пользователей<b>{{ preferences_count }}</b></div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Как работает в реальном проекте</h2><span class="pill">architecture</span></div>
+      <div class="flow-list">
+        <div class="row"><b>1. Событие</b><span>Заявка, инвестиция, платёж, поддержка или риск-флаг.</span></div>
+        <div class="row"><b>2. Notification</b><span>Сохраняется внутреннее уведомление в кабинете.</span></div>
+        <div class="row"><b>3. Preferences</b><span>Проверяются настройки пользователя и разрешённые каналы.</span></div>
+        <div class="row"><b>4. Provider</b><span>Email/SMS/Push уходят через внешний сервис. В demo — в logs/*.log.</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-head"><h2>Шаблоны сообщений</h2><span class="pill">{{ templates|length }}</span></div>
+      {% for t in templates %}
+        <div class="row">
+          <b>{{ t.code }}</b>
+          <span>{{ t.title }}</span>
+          <em>{{ t.category }} · v{{ 'active' if t.is_active else 'off' }}</em>
+        </div>
+      {% else %}<p>Шаблонов пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Журнал отправок</h2><span class="pill">CommunicationLog</span></div>
+    {% for log in logs %}
+      <div class="row tx-row" data-status="{{ log.status }}">
+        <b>{{ log.channel|upper }} · {{ log.subject }}</b>
+        <span>{{ log.recipient }} · {{ log.provider }} · {{ log.category }}</span>
+        <em>{{ log.status }} · {{ log.created_at.strftime('%d.%m %H:%M') }}</em>
+      </div>
+    {% else %}<p>Отправок пока нет. Нажми «Отправить TEST».</p>{% endfor %}
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Последние уведомления</h2><span class="pill">Notification</span></div>
+    {% for n in notifications %}
+      <div class="row">
+        <b>{{ n.title }}</b>
+        <span>User #{{ n.user_id }} · {{ n.category_label }} · {{ n.message[:120] }}</span>
+        <em>{{ 'new' if not n.is_read else 'read' }} · {{ n.created_at.strftime('%d.%m %H:%M') }}</em>
+      </div>
+    {% else %}<p>Уведомлений пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Безопасность — Kopilka{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="section-head">
+    <p class="eyebrow">Безопасность</p>
+    <h1>Сессии, журнал действий и защита аккаунта</h1>
+  </div>
+  <div class="grid two">
+    <div class="card soft">
+      <h2>Активность входов</h2>
+      <div class="mini-list">
+        {% for session in sessions %}
+        <div class="mini-row"><b>{{ session.device }}</b><span>{{ session.ip }} · {{ session.status }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card soft gold-panel">
+      <h2>Рекомендации</h2>
+      <p>Для реального запуска сюда подключаются SMS/OTP, 2FA, подтверждение смены карты и алерты о подозрительных действиях.</p>
+    </div>
+  </div>
+  <div class="card soft">
+    <h2>Журнал действий</h2>
+    {% if logs %}
+    <div class="table-wrap"><table><thead><tr><th>Дата</th><th>Действие</th><th>Объект</th><th>IP</th></tr></thead><tbody>
+      {% for log in logs %}<tr><td>{{ log.created_at.strftime('%d.%m.%Y %H:%M') }}</td><td>{{ log.action }}</td><td>{{ log.entity or '—' }} #{{ log.entity_id or '' }}</td><td>{{ log.ip_address or '—' }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<p class="muted">Журнал пока пуст.</p>{% endif %}
+  </div>
+</section>
+{% endblock %}

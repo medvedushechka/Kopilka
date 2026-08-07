@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Договорный пакет займа #{{ loan.id }} — Kopilka{% endblock %}
+{% block content %}
+<section class="page-shell legal-page">
+  <div class="section-head">
+    <p class="eyebrow">Deal card</p>
+    <h1>Договорный пакет займа #{{ loan.id }}</h1>
+    <p>Сделка P2P: заявка #{{ loan.application_id }}, сумма {{ loan.principal }} BYN, срок до {{ loan.due_date }}, статус {{ loan.status }}.</p>
+  </div>
+
+  <div class="stat-grid wide">
+    <div>Сумма<b>{{ loan.principal }} BYN</b></div>
+    <div>К возврату<b>{{ loan.total_due }} BYN</b></div>
+    <div>Остаток<b>{{ loan.balance }} BYN</b></div>
+    <div>Займодавцев<b>{{ loan.application.investor_count }}</b></div>
+  </div>
+
+  <div class="card soft">
+    <div class="section-head compact"><h2>Документы</h2><span class="pill">{{ docs|length }} snapshots</span></div>
+    <div class="doc-grid">
+    {% for doc in docs %}
+      <a class="doc-card" href="{{ url_for('loans.deal_document', doc_id=doc.id) }}">
+        <span class="doc-type">{{ doc.document_type }}</span>
+        <b>{{ doc.title }}</b>
+        <em>{{ doc.status }} · v{{ doc.version }}</em>
+      </a>
+    {% else %}
+      <p class="muted">Документы пока не сформированы.</p>
+    {% endfor %}
+    </div>
+  </div>
+
+  <div class="card soft">
+    <h2>Реальная схема подключения</h2>
+    <div class="mini-list">
+      <div class="mini-row">МСИ / KYC <span>проверка личности без хранения паспорта</span></div>
+      <div class="mini-row">Платёжный провайдер <span>токены карт, кошельки, выплаты</span></div>
+      <div class="mini-row">Подписание <span>SMS/МСИ/ЭЦП/НЦЭУ</span></div>
+      <div class="mini-row">Архив документов <span>версионирование + audit trail</span></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

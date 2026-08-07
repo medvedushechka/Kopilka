@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Anti-Fraud Core — Kopilka{% endblock %}
+{% block content %}
+<section class="page admin-page">
+  <div class="topline admin-hero">
+    <div>
+      <div class="eyebrow">Anti-Fraud Core</div>
+      <h1>Антифрод и мониторинг аномалий</h1>
+      <p class="muted">TEST-контур выявляет подозрительные заявки, несколько аккаунтов с одного IP, смену устройств, аномальные инвестиции и нетипичные движения по кошелькам. В production сюда подключаются real-time антифрод, device fingerprinting, банк, платёжный провайдер и поведенческая аналитика.</p>
+    </div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('admin.antifraud_run_bulk') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Запустить сканирование</button></form>
+      <form method="post" action="{{ url_for('admin.antifraud_seed') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-soft">Demo-события</button></form>
+      <a class="btn btn-soft" href="{{ url_for('admin.compliance_dashboard') }}">Compliance</a>
+      <a class="btn btn-soft" href="{{ url_for('admin.dashboard') }}">Админка</a>
+    </div>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Всего событий<b>{{ summary.total }}</b></div>
+    <div>Открытые<b>{{ summary.open }}</b></div>
+    <div>Высокий риск<b>{{ summary.high }}</b></div>
+    <div>Средний риск<b>{{ summary.medium }}</b></div>
+    <div>Средний score<b>{{ summary.avg_score }}/100</b></div>
+    <div>Shared IP<b>{{ summary.shared_ip }}</b></div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head">
+      <h2>Правильная production-архитектура</h2>
+      <span class="pill">risk engine notes</span>
+    </div>
+    <div class="cards three compact">
+      <div class="mini-card"><b>Device / IP</b><span>На сайте не хранятся паспорта. Антифрод работает по техническим признакам: IP, device fingerprint, скорость действий, cookies, user-agent, поведение.</span></div>
+      <div class="mini-card"><b>Платежи</b><span>Проверяются возвраты, частота пополнений, связки кошельков, токены карт и операции банка/провайдера. Полные номера карт не хранятся.</span></div>
+      <div class="mini-card"><b>Решения</b><span>Автоматика ставит fraud score, оператор принимает решение: норма, мониторинг, ограничение или блокировка. Всё пишется в audit trail.</span></div>
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>События антифрода</h2><span class="pill">latest 140</span></div>
+      {% for event in events %}
+        <div class="row compliance-row">
+          <b>#{{ event.id }} {{ event.title }}</b>
+          <span>{% if event.user %}{{ event.user.full_name }} · {{ event.user.email }}{% else %}system{% endif %}{% if event.application %} · заявка #{{ event.application.id }}{% endif %}</span>
+          <em>{{ event.status }} · {{ event.severity_label }} · score {{ event.fraud_score }}/100</em>
+          <small class="muted">{{ event.description }}</small>
+          <div class="flag-list">
+            <span class="risk-flag {{ event.severity }}">{{ event.event_type }}</span>
+            {% if event.ip_address %}<span class="risk-flag info">IP {{ event.ip_address }}</span>{% endif %}
+            {% if event.device_fingerprint %}<span class="risk-flag info">device {{ event.device_fingerprint }}</span>{% endif %}
+          </div>
+          <div class="actions inline-actions">
+            <form method="post" action="{{ url_for('admin.antifraud_decide', event_id=event.id, decision='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Норма</button></form>
+            <form method="post" action="{{ url_for('admin.antifraud_decide', event_id=event.id, decision='monitor') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Мониторинг</button></form>
+            <form method="post" action="{{ url_for('admin.antifraud_decide', event_id=event.id, decision='restrict') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Ограничить</button></form>
+            <form method="post" action="{{ url_for('admin.antifraud_decide', event_id=event.id, decision='block') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Блок</button></form>
+          </div>
+        </div>
+      {% else %}
+        <p>Событий пока нет. Нажми “Запустить сканирование”.</p>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <div class="section-head"><h2>Быстрая проверка пользователя</h2><span class="pill">manual scan</span></div>
+      {% for user in users %}
+        <div class="row">
+          <b>{{ user.full_name }}</b>
+          <span>{{ user.email }} · {{ 'займодавец' if user.is_investor else 'заёмщик' }} · {{ 'заблокирован' if user.is_blocked else 'активен' }}</span>
+          <div class="actions inline-actions">
+            <form method="post" action="{{ url_for('admin.antifraud_run_user', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Проверить</button></form>
+            {% if user.is_blocked %}<form method="post" action="{{ url_for('admin.antifraud_unblock_user', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Разблокировать</button></form>{% endif %}
+          </div>
+        </div>
+      {% else %}<p>Demo-пользователей пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Типы событий</h2><span class="pill">distribution</span></div>
+      {% for event_type, count in grouped.items() %}
+        <div class="row">
+          <b>{{ event_type }}</b>
+          <span>{{ count }} событий</span>
+        </div>
+      {% else %}<p>Нет данных для распределения.</p>{% endfor %}
+    </div>
+
+    <div class="panel">
+      <div class="section-head"><h2>Журнал решений</h2><span class="pill">audit trail</span></div>
+      {% for decision in decisions %}
+        <div class="row">
+          <b>{{ decision.decision }}</b>
+          <span>event #{{ decision.event_id }} · {{ decision.actor.full_name }}</span>
+          <em>{{ decision.created_at.strftime('%d.%m.%Y %H:%M') }}</em>
+          {% if decision.comment %}<small class="muted">{{ decision.comment }}</small>{% endif %}
+        </div>
+      {% else %}<p>Решений пока нет.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

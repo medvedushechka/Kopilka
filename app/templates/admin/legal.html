@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Legal Core — Admin{% endblock %}
+{% block content %}
+<section class="page admin-page legal-admin">
+  <div class="topline admin-hero">
+    <div>
+      <div class="eyebrow">Legal Core</div>
+      <h1>Договорный контур Kopilka</h1>
+      <p class="muted">Шаблоны документов, договоры сделок, TEST-подписи и audit trail. Без хранения паспортов, сканов и полных номеров карт.</p>
+    </div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('admin.rebuild_legal_documents') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Пересобрать документы</button></form>
+      <a class="btn btn-soft" href="{{ url_for('admin.finance_dashboard') }}">Finance Core</a>
+    </div>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Шаблоны<b>{{ summary.templates }}</b></div>
+    <div>Активные<b>{{ summary.active_templates }}</b></div>
+    <div>Документы<b>{{ summary.documents }}</b></div>
+    <div>Ждут подписи<b>{{ summary.waiting }}</b></div>
+    <div>Подписаны<b>{{ summary.signed }}</b></div>
+    <div>Signature events<b>{{ summary.signature_events }}</b></div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Шаблоны документов</h2><span class="pill">version registry</span></div>
+      {% for t in templates %}
+        <div class="row">
+          <b>{{ t.title }}</b>
+          <span>{{ t.code }} · {{ t.document_type }} · v{{ t.version }}</span>
+          <em>{% if t.requires_signature %}требует подпись{% else %}без подписи{% endif %}</em>
+        </div>
+      {% else %}<p>Шаблонов пока нет.</p>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-head"><h2>Займы без документов</h2><span class="pill">quality control</span></div>
+      {% for loan in loans_without_docs %}
+        <div class="row">
+          <b>Займ #{{ loan.id }} · {{ loan.user.full_name }}</b>
+          <span>{{ loan.principal }} BYN · {{ loan.status }}</span>
+          <em>{{ loan.issued_at.strftime('%d.%m.%Y') }}</em>
+        </div>
+      {% else %}<p class="muted">Все найденные займы имеют юридический пакет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Документы сделок</h2><span class="pill">latest 120</span></div>
+    {% for doc in documents %}
+      <div class="row legal-row">
+        <b><a href="{{ url_for('loans.deal_document', doc_id=doc.id) }}">#{{ doc.id }} {{ doc.title }}</a></b>
+        <span>{{ doc.document_type }} · {{ doc.status }} · заёмщик #{{ doc.borrower_id }}{% if doc.investor_id %} · займодавец #{{ doc.investor_id }}{% endif %}</span>
+        <em>{{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</em>
+        {% if doc.status != 'Подписан' %}
+          <form method="post" action="{{ url_for('admin.platform_sign_document', doc_id=doc.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Подпись платформы TEST</button></form>
+        {% endif %}
+      </div>
+    {% else %}<p>Документов пока нет.</p>{% endfor %}
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Audit подписей</h2><span class="pill">signature trail</span></div>
+    {% for e in signatures %}
+      <div class="row">
+        <b>Документ #{{ e.document_id }} · {{ e.signer_role }}</b>
+        <span>{{ e.provider }} · {{ e.external_ref }} · {{ e.ip_address or 'ip —' }}</span>
+        <em>{{ e.created_at.strftime('%d.%m.%Y %H:%M') }}</em>
+      </div>
+    {% else %}<p>Событий подписания пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

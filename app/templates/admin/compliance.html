@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Compliance & Risk Core — Kopilka{% endblock %}
+{% block content %}
+<section class="page admin-page">
+  <div class="topline admin-hero">
+    <div>
+      <div class="eyebrow">Compliance & Risk Core</div>
+      <h1>AML/KYC и риск-контроль</h1>
+      <p class="muted">TEST-контур проверок без хранения паспортов, сканов документов и полных карточных данных. В production здесь подключаются МСИ, банк, AML/PEP/sanctions-провайдеры, антифрод и официальные реестры.</p>
+    </div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('admin.compliance_run_bulk') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Запустить TEST-проверки</button></form>
+      <a class="btn btn-soft" href="{{ url_for('admin.dashboard') }}">Админка</a>
+      <a class="btn btn-soft" href="{{ url_for('admin.legal_dashboard') }}">Legal Core</a>
+    </div>
+  </div>
+
+  <div class="stat-grid wide admin-stats">
+    <div>Всего кейсов<b>{{ summary.total }}</b></div>
+    <div>Ожидают решения<b>{{ summary.pending }}</b></div>
+    <div>Высокий риск<b>{{ summary.high }}</b></div>
+    <div>Средний риск<b>{{ summary.medium }}</b></div>
+    <div>Низкий риск<b>{{ summary.low }}</b></div>
+    <div>Sanctions/PEP hits<b>{{ summary.sanctions }}</b></div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head">
+      <h2>Как устроено правильно</h2>
+      <span class="pill">production notes</span>
+    </div>
+    <div class="cards three compact">
+      <div class="mini-card"><b>Идентификация</b><span>Паспортные данные не вводятся и не хранятся на сайте. Пользователь проходит МСИ/банк/официального KYC-провайдера, Kopilka получает только статус, reference и дату.</span></div>
+      <div class="mini-card"><b>AML / PEP / sanctions</b><span>Проверки выполняет официальный провайдер или банк. На платформе хранится результат проверки, risk score, flags и audit trail решения.</span></div>
+      <div class="mini-card"><b>Платежи и карты</b><span>Полный номер карты не хранится. Только token, mask и внешний provider reference от платёжного провайдера.</span></div>
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Compliance-кейсы</h2><span class="pill">latest 120</span></div>
+      {% for case in cases %}
+        <div class="row compliance-row">
+          <b>#{{ case.id }} {{ case.user.full_name }}</b>
+          <span>{{ 'Займодавец' if case.subject_role == 'investor' else 'Заёмщик' }}{% if case.application %} · заявка #{{ case.application.id }}{% endif %} · {{ case.provider_reference }}</span>
+          <em>{{ case.status }} · {{ case.risk_level }} · {{ case.risk_score }}/100</em>
+          <div class="actions inline-actions">
+            <form method="post" action="{{ url_for('admin.compliance_decide', case_id=case.id, decision='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Пропустить</button></form>
+            <form method="post" action="{{ url_for('admin.compliance_decide', case_id=case.id, decision='manual_review') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Ручная</button></form>
+            <form method="post" action="{{ url_for('admin.compliance_decide', case_id=case.id, decision='freeze') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Freeze</button></form>
+            <form method="post" action="{{ url_for('admin.compliance_decide', case_id=case.id, decision='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small btn-soft">Отклонить</button></form>
+          </div>
+          {% if case.flags %}
+            <div class="flag-list">
+              {% for flag in case.flags %}<span class="risk-flag {{ flag.severity }}">{{ flag.title }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% else %}
+        <p>Кейсов пока нет. Нажми “Запустить TEST-проверки”.</p>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <div class="section-head"><h2>Пользователи без проверки</h2><span class="pill">quick run</span></div>
+      {% for user in users_without_checks %}
+        <div class="row">
+          <b>{{ user.full_name }}</b>
+          <span>{{ user.email }} · {{ 'займодавец' if user.is_investor else 'заёмщик' }}</span>
+          <form method="post" action="{{ url_for('admin.compliance_run_user', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small">Проверить</button></form>
+        </div>
+      {% else %}<p>Все demo-пользователи уже имеют compliance-кейсы.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="cards two reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Последние флаги</h2><span class="pill">risk flags</span></div>
+      {% for flag in flags %}
+        <div class="row">
+          <b>{{ flag.title }}</b>
+          <span>{{ flag.code }} · {{ flag.source }}</span>
+          <em>{{ flag.severity }} · case #{{ flag.case_id }}</em>
+          <small class="muted">{{ flag.description }}</small>
+        </div>
+      {% else %}<p>Флагов пока нет.</p>{% endfor %}
+    </div>
+
+    <div class="panel">
+      <div class="section-head"><h2>Журнал решений</h2><span class="pill">audit trail</span></div>
+      {% for decision in decisions %}
+        <div class="row">
+          <b>{{ decision.decision }}</b>
+          <span>case #{{ decision.case_id }} · {{ decision.actor.full_name }}</span>
+          <em>{{ decision.created_at.strftime('%d.%m.%Y %H:%M') }}</em>
+          {% if decision.comment %}<small class="muted">{{ decision.comment }}</small>{% endif %}
+        </div>
+      {% else %}<p>Решений пока нет.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

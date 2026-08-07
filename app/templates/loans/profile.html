@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page narrow">
+  <div class="topline">
+    <div>
+      <h1>Профиль и идентификация</h1>
+      <p class="muted">Заполненность: {{ profile.completion_percent }}%. Паспортные данные, сканы документов и личный номер на сайте не сохраняются.</p>
+    </div>
+    <a class="btn ghost" href="{{ url_for('loans.dashboard') }}">В кабинет</a>
+  </div>
+
+  <div class="panel">
+    <h2>Идентификация через МСИ</h2>
+    <p class="muted">В реальном проекте пользователь перенаправляется в Межбанковскую систему идентификации или к официальному KYC-провайдеру. Kopilka получает только результат проверки и технический reference операции.</p>
+    <div class="stat-grid">
+      <div><small>Статус</small><b>{% if profile.msi_verified %}Подтверждено{% else %}Не пройдено{% endif %}</b></div>
+      <div><small>Провайдер</small><b>{{ profile.msi_provider or 'МСИ TEST' }}</b></div>
+      <div><small>Reference</small><b>{{ profile.msi_reference or '—' }}</b></div>
+      <div><small>Дата</small><b>{% if profile.msi_verified_at %}{{ profile.msi_verified_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</b></div>
+    </div>
+    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="check"><input type="checkbox" name="consent_msi" {% if profile.consent_msi %}checked{% endif %}> Согласен пройти идентификацию через МСИ / официальный шлюз</label>
+      <label class="check"><input type="checkbox" name="consent_personal_data" {% if profile.consent_personal_data %}checked{% endif %}> Согласен на обработку минимального набора данных сервиса</label>
+      <label class="check"><input type="checkbox" name="consent_scoring" {% if profile.consent_scoring %}checked{% endif %}> Согласен на скоринговую проверку заявки</label>
+      <button class="btn full" name="action" value="msi_verify" type="submit">Пройти МСИ TEST</button>
+    </form>
+  </div>
+
+  <form class="profile-form" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="panel">
+      <h2>Данные для тестового скоринга</h2>
+      <p class="muted">Это не паспортная анкета. Здесь хранятся только данные, нужные для расчёта тестового риска.</p>
+      <div class="form-grid two-cols">
+        <select name="age_group">
+          {% set ag = profile.age_group or '' %}
+          <option value="" {% if not ag %}selected{% endif %}>Возрастная группа</option>
+          <option value="18-24" {% if ag == '18-24' %}selected{% endif %}>18–24</option>
+          <option value="25-55" {% if ag == '25-55' %}selected{% endif %}>25–55</option>
+          <option value="56-65" {% if ag == '56-65' %}selected{% endif %}>56–65</option>
+          <option value="65+" {% if ag == '65+' %}selected{% endif %}>65+</option>
+        </select>
+        <input name="region" placeholder="Регион / город" value="{{ profile.region or '' }}">
+        <select name="employment_type">
+          {% set emp = profile.employment_type or '' %}
+          <option value="" {% if not emp %}selected{% endif %}>Тип занятости</option>
+          <option {% if emp == 'Работа по найму' %}selected{% endif %}>Работа по найму</option>
+          <option {% if emp == 'ИП / самозанятый' %}selected{% endif %}>ИП / самозанятый</option>
+          <option {% if emp == 'Пенсионер' %}selected{% endif %}>Пенсионер</option>
+          <option {% if emp == 'Безработный' %}selected{% endif %}>Безработный</option>
+        </select>
+        <input name="work_experience_months" type="number" min="0" placeholder="Стаж, месяцев" value="{{ profile.work_experience_months or 0 }}">
+        <input name="monthly_income" type="number" step="0.01" placeholder="Доход в месяц, BYN" value="{{ profile.monthly_income or '' }}">
+        <input name="monthly_expenses" type="number" step="0.01" placeholder="Обязательные расходы, BYN" value="{{ profile.monthly_expenses or '' }}">
+        <select name="marital_status">
+          {% set ms = profile.marital_status or '' %}
+          <option value="" {% if not ms %}selected{% endif %}>Семейное положение</option>
+          <option {% if ms == 'Не женат / не замужем' %}selected{% endif %}>Не женат / не замужем</option>
+          <option {% if ms == 'Женат / замужем' %}selected{% endif %}>Женат / замужем</option>
+          <option {% if ms == 'Разведён / разведена' %}selected{% endif %}>Разведён / разведена</option>
+        </select>
+        <input name="children_count" type="number" min="0" max="10" placeholder="Количество детей" value="{{ profile.children_count or 0 }}">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Карта для выдачи</h2>
+      <p class="muted">В реальном проекте данные карты вводятся на стороне банка/платёжного провайдера. Kopilka получает только маску карты и токен.</p>
+      <div class="form-grid two-cols">
+        <input name="card_number" inputmode="numeric" placeholder="TEST: 4111 1111 1111 1111">
+        <input disabled value="{{ profile.card_mask or 'Карта ещё не токенизирована' }}">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Согласия</h2>
+      <label class="check"><input type="checkbox" name="consent_msi" {% if profile.consent_msi %}checked{% endif %}> Согласен на идентификацию через МСИ / официальный шлюз</label>
+      <label class="check"><input type="checkbox" name="consent_personal_data" {% if profile.consent_personal_data %}checked{% endif %}> Согласен на обработку минимального набора данных сервиса</label>
+      <label class="check"><input type="checkbox" name="consent_scoring" {% if profile.consent_scoring %}checked{% endif %}> Согласен на тестовый скоринг и проверку заявки</label>
+      <button class="btn full" name="action" value="save_profile" type="submit">Сохранить профиль</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

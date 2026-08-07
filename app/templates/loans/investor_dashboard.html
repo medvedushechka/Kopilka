@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Investor Pro — Kopilka{% endblock %}
+{% block content %}
+<section class="page-hero compact investor-pro-hero">
+  <div>
+    <div class="eyebrow">Investor Pro</div>
+    <h1>Портфель, риск и доходность в одном интерфейсе.</h1>
+    <p>TEST-кабинет займодавца: инвестиции, автоинвест, риск-профиль, прогноз прибыли и витрина заявок.</p>
+  </div>
+  <div class="hero-mini-balance">
+    <span>Доступно</span>
+    <b>{{ wallet.available }} BYN</b>
+    <small>{{ wallet.provider_reference }}</small>
+  </div>
+</section>
+
+<section class="investor-kpi-grid reveal">
+  <article class="metric-card primary"><span>Портфель</span><strong>{{ analytics.portfolio_total }} BYN</strong><small>все инвестиции</small></article>
+  <article class="metric-card"><span>Активно</span><strong>{{ stats.invested_active }} BYN</strong><small>{{ stats.active_count }} активных долей</small></article>
+  <article class="metric-card"><span>Ожидаемый возврат</span><strong>{{ stats.expected_active }} BYN</strong><small>прибыль: {{ stats.active_profit }} BYN</small></article>
+  <article class="metric-card"><span>Полученная прибыль</span><strong>{{ stats.closed_profit }} BYN</strong><small>{{ stats.closed_count }} закрытых инвестиций</small></article>
+  <article class="metric-card"><span>Средняя доходность</span><strong>{{ stats.avg_yield }}%</strong><small>годовых, TEST</small></article>
+  <article class="metric-card warning"><span>Просрочки</span><strong>{{ stats.overdue_count }}</strong><small>долей в риске</small></article>
+</section>
+
+<section class="panel intelligence-panel reveal">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Investor Intelligence</div>
+      <h2>Оценка портфеля: {{ intelligence.risk_score }}/10</h2>
+      <p class="muted">{{ intelligence.profile }} · {{ intelligence.risk_level }}</p>
+    </div>
+    <span class="risk-score-ring">{{ intelligence.risk_score }}</span>
+  </div>
+  <div class="intelligence-split">
+    <div class="ai-meter">
+      <div><span>A+/A в портфеле</span><b>{{ intelligence.high_share }}%</b></div>
+      <div><span>C/D в портфеле</span><b>{{ intelligence.low_share }}%</b></div>
+      <div><span>Профиль</span><b>{{ intelligence.risk_level }}</b></div>
+    </div>
+    <div class="recommendations">
+      {% for item in intelligence.recommendations %}<p>• {{ item }}</p>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="analytics-grid reveal">
+  <article class="panel chart-panel large">
+    <div class="section-head"><div><h2>Динамика прибыли</h2><p class="muted">Визуализация по текущему demo-портфелю</p></div><span class="pill">7 дней</span></div>
+    <canvas id="profitChart" data-labels='{{ analytics.profit_labels|tojson }}' data-values='{{ analytics.profit_values|tojson }}' height="132"></canvas>
+  </article>
+  <article class="panel chart-panel">
+    <div class="section-head"><div><h2>Риск-профиль</h2><p class="muted">Распределение по рейтингам</p></div></div>
+    <canvas id="riskChart" data-labels='{{ analytics.grade_labels|tojson }}' data-values='{{ analytics.grade_values|tojson }}' height="180"></canvas>
+  </article>
+  <article class="panel forecast-card">
+    <div class="eyebrow">Forecast</div>
+    <h2>Прогноз прибыли</h2>
+    <div class="forecast-row"><span>Через месяц</span><b>+{{ analytics.forecast_month }} BYN</b></div>
+    <div class="forecast-row"><span>Через год</span><b>+{{ analytics.forecast_year }} BYN</b></div>
+    <p class="muted">Расчёт демонстрационный: в реальном проекте сюда подключается модель ожидаемой доходности и дефолтов.</p>
+  </article>
+</section>
+
+<section class="grid two cabinet-grid reveal">
+  <div class="panel wallet-panel">
+    <div class="section-head"><h2>TEST-кошелёк</h2><span class="pill">Bank API mock</span></div>
+    <p class="muted">В реальности деньги проводятся банком/платёжным провайдером. Платформа хранит reference операции, не деньги пользователя.</p>
+    <form method="post" action="{{ url_for('loans.investor_topup') }}" class="inline-form simple"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="amount" type="number" min="10" step="0.01" value="1000">
+      <button class="btn">Пополнить</button>
+    </form>
+  </div>
+
+  <div class="panel autoinvest-pro">
+    <div class="section-head"><h2>AutoInvest 2.0</h2><span class="pill">{{ 'Включено' if rule.is_enabled else 'Выключено' }}</span></div>
+    <div class="smart-profiles">
+      <form method="post" action="{{ url_for('loans.autoinvest_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="profile" value="conservative"><button class="profile-card" type="submit"><b>Консервативный</b><span>A/A+, низкий риск, меньшие доли</span></button></form>
+      <form method="post" action="{{ url_for('loans.autoinvest_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="profile" value="balanced"><button class="profile-card active" type="submit"><b>Сбалансированный</b><span>B+, средний риск, диверсификация</span></button></form>
+      <form method="post" action="{{ url_for('loans.autoinvest_profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="profile" value="aggressive"><button class="profile-card" type="submit"><b>Агрессивный</b><span>выше доходность, выше риск</span></button></form>
+    </div>
+    <form method="post" action="{{ url_for('loans.save_autoinvest') }}" class="autoinvest-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="check"><input type="checkbox" name="is_enabled" {% if rule.is_enabled %}checked{% endif %}> Включить автоинвестирование</label>
+      <div class="form-grid small-fields">
+        <label>Минимальный рейтинг
+          <select name="min_rating">{% for g in ['A+','A','B+','B','C','D'] %}<option value="{{ g }}" {% if rule.min_rating==g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select>
+        </label>
+        <label>Максимальный риск
+          <select name="max_risk">{% for r in ['Низкий','Средний','Высокий'] %}<option value="{{ r }}" {% if rule.max_risk==r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+        </label>
+        <label>Макс. в одну заявку<input name="max_amount_per_application" type="number" min="10" step="0.01" value="{{ rule.max_amount_per_application }}"></label>
+        <label>Макс. срок, дней<input name="max_term_days" type="number" min="3" max="60" value="{{ rule.max_term_days }}"></label>
+        <label>Мин. доходность, %<input name="min_yield" type="number" min="0" step="0.01" value="{{ rule.min_yield }}"></label>
+      </div>
+      <div class="actions"><button class="btn btn-small">Сохранить</button></div>
+    </form>
+    <form method="post" action="{{ url_for('loans.run_autoinvest_now') }}" class="subtle-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-small btn-ghost">Запустить сейчас</button>
+    </form>
+  </div>
+</section>
+
+<section class="panel reveal pro-market-block">
+  <div class="section-head"><div><h2>Лучшие заявки на витрине</h2><p class="muted">Быстрое инвестирование из кабинета</p></div><a class="btn btn-small btn-ghost" href="{{ url_for('loans.marketplace') }}">Открыть биржу</a></div>
+  <div class="cards-grid marketplace preview-grid">
+    {% for app in marketplace %}
+    <article class="loan-card pro-loan">
+      <div class="loan-top"><b>#{{ app.id }}</b><span class="rating-badge grade-{{ app.rating_grade|replace('+','plus') }}">{{ app.rating_grade }}</span></div>
+      <div class="amount-line">{{ app.amount }} BYN</div>
+      <div class="market-meta"><span>{{ app.term_days }} дней</span><span>{{ app.annual_yield }}% годовых</span><span>{{ app.risk_level }}</span></div>
+      <div class="progress pro-progress"><i style="width: {{ app.funding_progress }}%"></i></div>
+      <div class="funding-row"><b>{{ app.funding_progress }}%</b><span>осталось {{ app.remaining_to_fund }} BYN</span><span>{{ app.investor_count }} инвесторов</span></div>
+      <form method="post" action="{{ url_for('loans.invest', app_id=app.id) }}" class="inline-form simple"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="amount" type="number" min="10" max="{{ app.remaining_to_fund }}" step="0.01" value="{{ [100, app.remaining_to_fund]|min }}">
+        <button class="btn btn-small">Инвестировать</button>
+      </form>
+    </article>
+    {% else %}<p class="muted">Пока нет заявок на витрине.</p>{% endfor %}
+  </div>
+</section>
+
+<section class="panel reveal investments-table">
+  <div class="section-head"><h2>Мои инвестиции</h2><span class="pill">последние 30</span></div>
+  <div class="table-wrap"><table>
+    <tr><th>Заявка</th><th>Рейтинг</th><th>Сумма</th><th>Ожидаемый возврат</th><th>Прибыль</th><th>Комиссия</th><th>Статус</th></tr>
+    {% for inv in investments %}
+    <tr><td>#{{ inv.application_id }}</td><td>{{ inv.application.rating_grade }}</td><td>{{ inv.amount }}</td><td>{{ inv.expected_return }}</td><td>{{ inv.investor_profit }}</td><td>{{ inv.platform_fee }}</td><td><span class="pill">{{ inv.status }}</span></td></tr>
+    {% else %}<tr><td colspan="7">Пока нет инвестиций.</td></tr>{% endfor %}
+  </table></div>
+</section>
+{% endblock %}

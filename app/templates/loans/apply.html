@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="auth-card loan-card">
+  <h1>Заявка на займ</h1>
+  {% if not profile or not profile.is_ready_for_application %}
+    <div class="flash danger">Анкета ещё не готова для заявки. Заполните паспорт, доход, карту и согласия.</div>
+    <a class="btn full" href="{{ url_for('loans.profile') }}">Заполнить анкету</a>
+  {% else %}
+    <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Сумма, BYN<input id="applyAmount" name="amount" type="range" min="50" max="5000" step="50" value="800"></label>
+      <div class="calc-value"><span id="applyAmountOut">800</span> BYN</div>
+      <label>Срок, дней<input id="applyDays" name="term_days" type="range" min="3" max="60" value="14"></label>
+      <div class="calc-value"><span id="applyDaysOut">14</span> дней</div>
+      <div class="result-grid">
+        <div><small>Ставка</small><b>0.8% в день</b></div>
+        <div><small>К возврату</small><b><span id="applyTotalOut">889.60</span> BYN</b></div>
+      </div>
+      <textarea name="purpose" placeholder="Цель займа"></textarea>
+      <button class="btn full">Отправить на тестовый скоринг</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Кабинет заёмщика — Kopilka{% endblock %}
+{% block content %}
+<section class="page borrower-page">
+  <div class="topline borrower-hero">
+    <div>
+      <div class="eyebrow">Borrower OS</div>
+      <h1>Кабинет заёмщика</h1>
+      <p class="muted">Анкета: {{ current_user.profile.completion_percent if current_user.profile else 0 }}% · лимит повторного займа: {{ history.repeat_limit }} BYN · уровень: {{ history.client_level }}</p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-soft" href="{{ url_for('loans.profile') }}">Анкета</a>
+      <a class="btn btn-soft" href="{{ url_for('loans.documents_center') }}">Документы</a>
+      <a class="btn btn-soft" href="{{ url_for('loans.security') }}">Безопасность</a>
+      <a class="btn" href="{{ url_for('loans.apply') }}">Новая заявка</a>
+    </div>
+  </div>
+
+  <div class="stat-grid wide pro-borrower-stats">
+    <div>Закрыто займов<b>{{ history.closed_loans }}</b></div>
+    <div>Просрочки<b>{{ history.overdue_count }}</b></div>
+    <div>Рейтинг<b>{{ history.rating }}</b></div>
+    <div>Лимит<b>{{ history.repeat_limit }}</b></div>
+    <div>Уровень<b>{{ history.client_level }}</b></div>
+    <div>Всего займов<b>{{ history.total_loans }}</b></div>
+  </div>
+
+  {% set last_scored = applications|selectattr('scoring_score')|list|first %}
+  {% if last_scored %}
+  <section class="panel borrower-intelligence reveal">
+    <div class="section-head"><div><div class="eyebrow">Borrower Intelligence</div><h2>Как сформирован рейтинг {{ last_scored.rating_grade }}</h2></div><span class="risk-score-ring">{{ last_scored.scoring_score }}</span></div>
+    <div class="scoring-explain-grid">
+      <div><span>Риск</span><b>{{ last_scored.risk_level }}</b></div>
+      <div><span>Решение</span><b>{{ last_scored.scoring_decision }}</b></div>
+      <div><span>Лимит</span><b>{{ last_scored.max_approved_amount }} BYN</b></div>
+    </div>
+    <div class="score-factors">
+      {% for factor in (last_scored.scoring_details or '').split(';')[:7] %}
+        {% if factor.strip() %}<span>✓ {{ factor.strip() }}</span>{% endif %}
+      {% endfor %}
+    </div>
+    <p class="muted">В реальной версии часть факторов приходит из МСИ, кредитного бюро, банка-партнёра и антифрод-провайдера. Паспортные данные на сайте не хранятся.</p>
+  </section>
+  {% endif %}
+
+  <section class="panel timeline-panel reveal">
+    <div class="section-head"><h2>Маршрут заявки</h2><span class="pill">P2P cycle</span></div>
+    <div class="timeline-steps">
+      <div class="done"><b>01</b><span>МСИ TEST</span></div>
+      <div class="done"><b>02</b><span>Скоринг</span></div>
+      <div><b>03</b><span>Витрина</span></div>
+      <div><b>04</b><span>Финансирование</span></div>
+      <div><b>05</b><span>Погашение</span></div>
+    </div>
+  </section>
+
+  {% if active_loan %}
+    <div class="panel loan-summary active-loan-card reveal">
+      <div>
+        <h2>Активный займ #{{ active_loan.id }}</h2>
+        <p>Выдано: {{ active_loan.principal }} BYN · проценты: {{ active_loan.base_interest }} BYN · оплачено: {{ active_loan.repaid_amount }} BYN</p>
+        <p>Дата возврата: {{ active_loan.due_date }} · осталось дней: {{ active_loan.days_left }}</p>
+      </div>
+      <div class="big-balance"><small>Остаток к оплате</small>{{ active_loan.balance }} BYN</div>
+      <form method="post" action="{{ url_for('loans.repay', loan_id=active_loan.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="amount" type="number" step="0.01" placeholder="Сумма платежа">
+        <button class="btn small">Тестово погасить</button>
+      </form>
+      <a class="btn btn-soft" href="{{ url_for('loans.loan_detail', loan_id=active_loan.id) }}">Карточка займа</a>
+    </div>
+  {% endif %}
+
+  <div class="cards two borrower-cards reveal">
+    <div class="panel">
+      <div class="section-head"><h2>Заявки</h2><span class="pill">{{ applications|length }}</span></div>
+      {% for a in applications %}
+        <div class="row application-row">
+          <b>#{{ a.id }}</b>
+          <span>{{ a.amount }} BYN / {{ a.term_days }} дней</span>
+          <em>{{ a.status }}{% if a.scoring_score is not none %} · {{ a.scoring_score }}/1000 · {{ a.risk_level or 'риск —' }}{% endif %}</em>
+        </div>
+      {% else %}<p>Заявок пока нет.</p>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="topline mini"><h2>Уведомления</h2>
+        <form method="post" action="{{ url_for('loans.read_notifications') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-ghost small">Прочитать все</button></form>
+      </div>
+      {% for n in notifications %}
+        <div class="notice {{ n.notification_type }} {% if not n.is_read %}unread{% endif %}">
+          <b>{{ n.title }}</b>
+          <p>{{ n.message }}</p>
+          <small>{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+        </div>
+      {% else %}<p>Уведомлений пока нет.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="section-head"><h2>Транзакции</h2><span class="pill">Bank API TEST</span></div>
+    {% for t in transactions %}
+      <div class="row tx-row" data-status="{{ t.status }}">
+        <b>{{ t.operation_type }}</b>
+        <span>{{ t.amount }} BYN{% if t.external_id %} · {{ t.external_id }}{% endif %}</span>
+        <em>{{ t.status }}</em>
+      </div>
+    {% else %}<p>Транзакций пока нет.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

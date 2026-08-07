@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Настройки уведомлений — Kopilka{% endblock %}
+{% block content %}
+<section class="page notifications-page">
+  <div class="topline borrower-hero">
+    <div>
+      <div class="eyebrow">Notification Settings</div>
+      <h1>Настройки уведомлений</h1>
+      <p class="muted">В тестовой версии email/SMS/push не отправляются наружу, а записываются в logs/*.log.</p>
+    </div>
+    <a class="btn btn-soft" href="{{ url_for('loans.notifications_center') }}">К уведомлениям</a>
+  </div>
+
+  <form class="panel reveal settings-form" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="section-head"><h2>Каналы доставки</h2><span class="pill">TEST</span></div>
+    <div class="settings-grid">
+      <label class="setting-check"><input type="checkbox" name="enabled" {% if pref.enabled %}checked{% endif %}> <b>Внешняя доставка включена</b><span>Главный переключатель email, SMS и push. События внутри кабинета сохраняются.</span></label>
+      <label class="setting-check"><input type="checkbox" name="email_enabled" {% if pref.email_enabled %}checked{% endif %}> <b>Email TEST</b><span>Письма пишутся в logs/emails.log.</span></label>
+      <label class="setting-check"><input type="checkbox" name="sms_enabled" {% if pref.sms_enabled %}checked{% endif %}> <b>SMS TEST</b><span>SMS пишутся в logs/sms.log.</span></label>
+      <label class="setting-check"><input type="checkbox" name="push_enabled" {% if pref.push_enabled %}checked{% endif %}> <b>Push TEST</b><span>Push-события пишутся в logs/push.log.</span></label>
+    </div>
+
+    <div class="section-head compact"><h2>Типы событий</h2></div>
+    <div class="settings-grid">
+      <label class="setting-check"><input type="checkbox" name="loan_events" {% if pref.loan_events %}checked{% endif %}> <b>Займы и заявки</b><span>Создание, проверка, финансирование, выдача.</span></label>
+      <label class="setting-check"><input type="checkbox" name="investment_events" {% if pref.investment_events %}checked{% endif %}> <b>Инвестиции</b><span>Инвестирование, возвраты, прибыль.</span></label>
+      <label class="setting-check"><input type="checkbox" name="payment_events" {% if pref.payment_events %}checked{% endif %}> <b>Платежи</b><span>Погашения, комиссии, gateway-операции.</span></label>
+      <label class="setting-check"><input type="checkbox" name="support_events" {% if pref.support_events %}checked{% endif %}> <b>Поддержка</b><span>Ответы операторов и изменение статуса обращений.</span></label>
+      <label class="setting-check"><input type="checkbox" name="marketing_enabled" {% if pref.marketing_enabled %}checked{% endif %}> <b>Маркетинг</b><span>Отключено по умолчанию.</span></label>
+    </div>
+    <button class="btn">Сохранить настройки</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Operations Core — Kopilka{% endblock %}
+{% block content %}
+<section class="section compact">
+  <div class="section-head">
+    <div>
+      <span class="eyebrow">Operations Core 1.0</span>
+      <h1>Операционный центр</h1>
+      <p class="muted">Единая очередь поддержки, ручных проверок, SLA и внутренних заметок операторов.</p>
+    </div>
+    <form method="post" action="{{ url_for('admin.operations_seed') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn" type="submit">Создать demo-очередь</button>
+    </form>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><span>Открытые тикеты</span><strong>{{ summary.tickets_open }}</strong></div>
+    <div class="kpi-card"><span>Критические</span><strong>{{ summary.tickets_critical }}</strong></div>
+    <div class="kpi-card"><span>SLA просрочен</span><strong>{{ summary.tickets_overdue_sla }}</strong></div>
+    <div class="kpi-card"><span>Ручная очередь</span><strong>{{ summary.manual_queue }}</strong></div>
+    <div class="kpi-card"><span>Ручной SLA</span><strong>{{ summary.manual_overdue_sla }}</strong></div>
+    <div class="kpi-card"><span>Шаблоны</span><strong>{{ summary.templates }}</strong></div>
+  </div>
+</section>
+
+<section class="section compact">
+  <div class="section-head"><div><h2>Обращения пользователей</h2><p class="muted">В реальном проекте сюда подключаются email, чат, телефония и webhook-события банка/МСИ.</p></div></div>
+  <div class="table-card">
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Пользователь</th><th>Тема</th><th>Категория</th><th>Приоритет</th><th>Статус</th><th>SLA</th><th></th></tr></thead>
+      <tbody>
+      {% for t in tickets %}
+        <tr class="{% if t.is_sla_overdue %}row-danger{% endif %}">
+          <td>#{{ t.id }}</td>
+          <td>{{ t.user.email }}</td>
+          <td>{{ t.subject }}</td>
+          <td>{{ t.category }}</td>
+          <td><span class="badge">{{ t.priority_label }}</span></td>
+          <td>{{ t.status }}</td>
+          <td>{% if t.sla_due_at %}{{ t.sla_due_at.strftime('%d.%m %H:%M') }}{% else %}—{% endif %}</td>
+          <td><a class="btn btn-small btn-soft" href="{{ url_for('admin.operations_ticket', ticket_id=t.id) }}">Открыть</a></td>
+        </tr>
+      {% else %}<tr><td colspan="8" class="muted">Пока нет обращений.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section compact">
+  <div class="section-head"><div><h2>Очередь ручной проверки</h2><p class="muted">Заявки, compliance-флаги, спорные платежи и юридические вопросы, которые нельзя решать автоматикой.</p></div></div>
+  <div class="cards-grid cards-grid-3">
+    {% for item in manual_items %}
+      <article class="glass-card">
+        <div class="card-top"><span class="badge">#{{ item.id }}</span><span class="badge {% if item.is_sla_overdue %}danger{% endif %}">{{ item.status }}</span></div>
+        <h3>Заявка #{{ item.application_id }}</h3>
+        <p class="muted">{{ item.reason }}</p>
+        <p><strong>Приоритет:</strong> {{ item.priority }} · <strong>SLA:</strong> {% if item.sla_due_at %}{{ item.sla_due_at.strftime('%d.%m %H:%M') }}{% else %}—{% endif %}</p>
+        <div class="button-row">
+          {% if item.status != 'Закрыта' %}
+          <form method="post" action="{{ url_for('admin.operations_manual_action', item_id=item.id, action='take') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-small btn-soft">Взять</button></form>
+          <form method="post" action="{{ url_for('admin.operations_manual_action', item_id=item.id, action='close') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="resolution" value="Проверено оператором Operations Core TEST"><button class="btn btn-small">Закрыть</button></form>
+          {% endif %}
+        </div>
+      </article>
+    {% else %}<p class="muted">Очередь пустая.</p>{% endfor %}
+  </div>
+</section>
+
+<section class="section compact">
+  <div class="section-head"><div><h2>Шаблоны ответов</h2><p class="muted">Операторы используют заготовки, чтобы ответы были единообразными и юридически аккуратными.</p></div></div>
+  <div class="cards-grid cards-grid-2">
+    {% for tpl in templates %}
+    <article class="glass-card"><span class="eyebrow">{{ tpl.category }}</span><h3>{{ tpl.title }}</h3><p class="muted">{{ tpl.body }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

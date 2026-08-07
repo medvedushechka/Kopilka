@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page">
+  <a class="back-link" href="{{ url_for('admin.dashboard') }}">← Назад в админку</a>
+  <h1>Заявка #{{ app.id }}</h1>
+  <div class="cards two">
+    <div class="panel">
+      <h2>Заявка</h2>
+      <p><b>Клиент:</b> {{ app.user.full_name }} / {{ app.user.email }} / {{ app.user.phone or 'телефон не указан' }}</p>
+      <p><b>Сумма:</b> {{ app.amount }} BYN</p>
+      <p><b>Срок:</b> {{ app.term_days }} дней</p>
+      <p><b>К возврату:</b> {{ app.total_to_return }} BYN</p>
+      <p><b>Статус:</b> {{ app.status }}</p>
+      <p><b>Цель:</b> {{ app.purpose or '—' }}</p>
+      <p><b>Скоринг:</b> {{ app.scoring_decision or '—' }}{% if app.scoring_score is not none %}, {{ app.scoring_score }}/1000{% endif %}</p>
+      <p><b>Детали скоринга:</b> {{ app.scoring_details or '—' }}</p>
+    </div>
+    <div class="panel">
+      <h2>Анкета клиента</h2>
+      {% set p = app.user.profile %}
+      {% if p %}
+        <p><b>МСИ:</b> {% if p.msi_verified %}Подтверждено{% else %}Не подтверждено{% endif %}</p>
+        <p><b>Reference МСИ:</b> {{ p.msi_reference or '—' }}</p>
+        <p><b>Провайдер:</b> {{ p.msi_provider or '—' }}</p>
+        <p><b>Возрастная группа:</b> {{ p.age_group or '—' }}</p>
+        <p><b>Регион:</b> {{ p.region or '—' }}</p>
+        <p><b>Занятость:</b> {{ p.employment_type or '—' }}</p>
+        <p><b>Стаж:</b> {{ p.work_experience_months or 0 }} мес.</p>
+        <p><b>Семья:</b> {{ p.marital_status or '—' }}, детей: {{ p.children_count or 0 }}</p>
+        <p><b>Доход:</b> {{ p.monthly_income or '—' }} BYN</p>
+        <p><b>Расходы:</b> {{ p.monthly_expenses or '—' }} BYN</p>
+        <p><b>Карта:</b> {{ p.card_mask or '—' }} / token: {{ p.card_token or '—' }}</p>
+        <p><b>Готовность анкеты:</b> {{ p.completion_percent }}%</p>
+        <p class="muted">Паспортные данные и сканы документов в Kopilka не хранятся. В реальном проекте админ видит только результат МСИ/KYC и audit-reference.</p>
+      {% else %}
+        <p>Анкета не заполнена.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="cards three admin-actions">
+    <form class="panel" method="post" action="{{ url_for('admin.publish', app_id=app.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Опубликовать на витрине</h3>
+      <p>Правильный P2P-сценарий: заявка попадает к займодавцам и финансируется ими.</p>
+      <button class="btn full">На витрину</button>
+    </form>
+    <form class="panel" method="post" action="{{ url_for('admin.approve', app_id=app.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Ручная TEST-выдача</h3>
+      <p>Только для отладки без займодавцев. В реальном P2P обычно не используется.</p>
+      <button class="btn ghost full">Выдать вручную</button>
+    </form>
+    <form class="panel" method="post" action="{{ url_for('admin.manual_review', app_id=app.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Ручная проверка</h3>
+      <textarea name="admin_comment" placeholder="Комментарий администратора">{{ app.admin_comment or '' }}</textarea>
+      <button class="btn ghost full">Оставить на проверке</button>
+    </form>
+    <form class="panel" method="post" action="{{ url_for('admin.reject', app_id=app.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Отказать</h3>
+      <textarea name="admin_comment" placeholder="Причина отказа">{{ app.admin_comment or '' }}</textarea>
+      <button class="btn ghost full">Отказать</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
